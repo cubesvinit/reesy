@@ -268,7 +268,7 @@ exports.sign_up = (req, result) => {
               latitude: req.body.latitude,
               longitude: req.body.longitude,
             };
-            if(req.body.date_of_birth){
+            if (req.body.date_of_birth) {
               user_data.date_of_birth = hee.decode(req.body.date_of_birth);
             }
             if (req.body.country_code) {
@@ -489,16 +489,16 @@ exports.login_by_thirdparty = (req, result) => {
   var user_data = {};
   const sign = {};
   var body = {};
-  function signupdata(){
-    db.query("INSERT INTO tbl_users SET ?", [user_data], (err, res3) => {
+  function signupdata(userdata, tokendata) {
+    db.query("INSERT INTO tbl_users SET ?", [userdata], (err, res3) => {
       if (err) {
         console.log("error", err);
         result(err, null);
         return;
       } else {
-        token_data.user_id = res3.insertId;
+        tokendata.user_id = res3.insertId;
         sign.sub = res3.insertId;
-        usersService.manage_token(token_data, (err, res4) => {
+        usersService.manage_token(tokendata, (err, res4) => {
           if (err) {
             console.log("error", err);
             result(err, null);
@@ -514,7 +514,7 @@ exports.login_by_thirdparty = (req, result) => {
         });
       }
     });
-  };
+  }
   var email_id = req.body.email_id ? req.body.email_id : "";
   db.query(
     "Select * from tbl_users where thirdparty_id = ? OR email_id = ? AND user_role = ?",
@@ -581,14 +581,14 @@ exports.login_by_thirdparty = (req, result) => {
                       "An account already exists with your phonenumber";
                     result(null, body);
                     return;
-                  }else{
-                    signupdata();
+                  } else {
+                    signupdata(user_data, token_data);
                   }
                 }
               }
             );
-          }else{
-            signupdata(user_data,token_data);
+          } else {
+            signupdata(user_data, token_data);
           }
         } else {
           if (data[0].is_block == 1) {
@@ -662,7 +662,7 @@ exports.forgot_password = (req, result) => {
       return;
     } else {
       if (res) {
-        if (res.user_role != req.body.user_role) {
+        if (res.user_role != req.body.user_role || res.login_type != 0) {
           body.Status = 0;
           body.Message = "You cannot forgot password for this Email";
           result(null, body);
@@ -725,7 +725,7 @@ exports.forgot_password = (req, result) => {
 
 exports.reset_password = (req, result) => {
   var body = {};
-  usersService.findByNumber(req.body.email_id, (err, res) => {
+  usersService.findByMail(req.body.email_id, (err, res) => {
     if (res) {
       var new_pass = md5(req.body.new_pass);
       db.query(
@@ -756,31 +756,22 @@ exports.reset_password = (req, result) => {
 exports.change_password = (req, result) => {
   var body = {};
   var CurrrentPassword = md5(req.body.password);
-  var NewPassword = md5(req.body.new_pass);
   if (CurrrentPassword == req.user.password) {
-    if (NewPassword == req.user.password) {
-      body.Status = 0;
-      body.Message =
-        "You have Entered Currrent Password Please enter new password";
-      result(null, body);
-      return;
-    } else {
-      db.query(
-        "UPDATE tbl_users SET password = ? WHERE user_id = ?",
-        [md5(req.body.new_pass), req.user.user_id],
-        (err, res1) => {
-          if (err) {
-            result(err, null);
-            return;
-          } else {
-            body.Status = 1;
-            body.Message = "Password changed successfully";
-            result(null, body);
-            return;
-          }
+    db.query(
+      "UPDATE tbl_users SET password = ? WHERE user_id = ?",
+      [md5(req.body.new_pass), req.user.user_id],
+      (err, res1) => {
+        if (err) {
+          result(err, null);
+          return;
+        } else {
+          body.Status = 1;
+          body.Message = "Password changed successfully";
+          result(null, body);
+          return;
         }
-      );
-    }
+      }
+    );
   } else {
     body.Status = 0;
     body.Message = "Current password is wrong";
