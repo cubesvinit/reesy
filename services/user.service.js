@@ -218,8 +218,8 @@ exports.sign_up = (req, result) => {
       } else {
         if (req.body.user_role == "user") {
           usersService.findByNumber(
-            req.body.country_code,
             req.body.phone_number,
+            req.body.country_code,
             (err, res3) => {
               if (err) {
                 console.log(err);
@@ -263,12 +263,23 @@ exports.sign_up = (req, result) => {
               user_role: req.body.user_role,
               first_name: req.body.first_name,
               last_name: req.body.last_name,
-              date_of_birth: hee.decode(req.body.date_of_birth),
               email_id: req.body.email_id,
               password: md5(req.body.password),
               latitude: req.body.latitude,
               longitude: req.body.longitude,
             };
+            if(req.body.date_of_birth){
+              user_data.date_of_birth = hee.decode(req.body.date_of_birth);
+            }
+            if (req.body.country_code) {
+              user_data.country_code = req.body.country_code;
+            }
+            if (req.body.iso_code) {
+              user_data.iso_code = req.body.iso_code;
+            }
+            if (req.body.phone_number) {
+              user_data.phone_number = req.body.phone_number;
+            }
             db.query("INSERT INTO tbl_users SET ?", user_data, (err, res) => {
               if (err) {
                 console.log("error: ", err);
@@ -311,7 +322,7 @@ exports.login = (req, result) => {
   var password = md5(req.body.password);
   db.query(
     "SELECT * FROM tbl_users WHERE email_id = ? AND password = ? AND user_role = ?",
-    [email_id, password,user_role],
+    [email_id, password, user_role],
     (err, res) => {
       if (err) {
         console.log("error", err);
@@ -478,6 +489,32 @@ exports.login_by_thirdparty = (req, result) => {
   var user_data = {};
   const sign = {};
   var body = {};
+  function signupdata(){
+    db.query("INSERT INTO tbl_users SET ?", [user_data], (err, res3) => {
+      if (err) {
+        console.log("error", err);
+        result(err, null);
+        return;
+      } else {
+        token_data.user_id = res3.insertId;
+        sign.sub = res3.insertId;
+        usersService.manage_token(token_data, (err, res4) => {
+          if (err) {
+            console.log("error", err);
+            result(err, null);
+            return;
+          } else {
+            body.Status = 1;
+            body.Message = "Registration successful";
+            body.info = res4[0];
+            body.UserToken = jwt.sign(sign, "dont_be_oversmart");
+            result(null, body);
+            return;
+          }
+        });
+      }
+    });
+  };
   var email_id = req.body.email_id ? req.body.email_id : "";
   db.query(
     "Select * from tbl_users where thirdparty_id = ? OR email_id = ? AND user_role = ?",
@@ -520,67 +557,39 @@ exports.login_by_thirdparty = (req, result) => {
           user_data.longitude = req.body.longitude;
         }
         if (req.body.country_code) {
-          update_data.country_code = req.body.country_code;
+          user_data.country_code = req.body.country_code;
         }
         if (req.body.iso_code) {
-          update_data.iso_code = req.body.iso_code;
+          user_data.iso_code = req.body.iso_code;
         }
         if (req.body.phone_number) {
-          update_data.phone_number = req.body.phone_number;
+          user_data.phone_number = req.body.phone_number;
         }
         if (data.length <= 0) {
           console.log("sign up");
-          usersService.findByNumber(
-            req.body.phone_number,
-            req.body.country_code,
-            (err, res1) => {
-              if (err) {
-                console.log("error", err);
-                result(err, null);
-                return;
-              } else {
-                if (res1) {
-                  body.Status = 0;
-                  body.Message =
-                    "An account already exists with your phonenumber";
-                  result(null, body);
-                  return;
+          if (req.body.user_role == "user") {
+            usersService.findByNumber(
+              req.body.phone_number,
+              req.body.country_code,
+              (err, res3) => {
+                if (err) {
+                  console.log(err);
                 } else {
-                  db.query(
-                    "INSERT INTO tbl_users SET ?",
-                    [user_data],
-                    (err, res3) => {
-                      if (err) {
-                        console.log("error", err);
-                        result(err, null);
-                        return;
-                      } else {
-                        token_data.user_id = res3.insertId;
-                        sign.sub = res3.insertId;
-                        usersService.manage_token(token_data, (err, res4) => {
-                          if (err) {
-                            console.log("error", err);
-                            result(err, null);
-                            return;
-                          } else {
-                            body.Status = 1;
-                            body.Message = "Registration successful";
-                            body.info = res4[0];
-                            body.UserToken = jwt.sign(
-                              sign,
-                              "dont_be_oversmart"
-                            );
-                            result(null, body);
-                            return;
-                          }
-                        });
-                      }
-                    }
-                  );
+                  if (res3) {
+                    body.Status = 0;
+                    body.Message =
+                      "An account already exists with your phonenumber";
+                    result(null, body);
+                    return;
+                  }else{
+                    signupdata();
+                  }
                 }
               }
-            }
-          );
+            );
+          }else{
+            signupdata(user_data,token_data);
+          }
         } else {
           if (data[0].is_block == 1) {
             body.Status = 0;
