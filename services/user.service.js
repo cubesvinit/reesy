@@ -72,7 +72,7 @@ exports.findByUserId = (user_id, result) => {
 
 exports.findByNumber = (phone_number, country_code, result) => {
   db.query(
-    "select * from tbl_users where phone_number = ? AND country_code = ?",
+    "select * from tbl_users where phone_number = ? AND country_code = ? AND user_role != 3",
     [phone_number, country_code],
     function (err, res) {
       if (err) {
@@ -87,7 +87,7 @@ exports.findByNumber = (phone_number, country_code, result) => {
 
 exports.findByMail = (email_id, result) => {
   db.query(
-    "select * from tbl_users where email_id = ?",
+    "select * from tbl_users where email_id = ? AND user_role != 3",
     [email_id],
     function (err, res) {
       if (err) {
@@ -460,8 +460,14 @@ exports.verification_for_email = (req, result) => {
                     : req.body.is_login == 1
                     ? "Login successful"
                     : "Email verification successfully done";
-                if (req.body.is_login == 0 || req.body.is_login == 1) {
+
+                if (
+                  (req.body.is_login == 0 && res1.user_role == "user") ||
+                  req.body.is_login == 1
+                ) {
                   body.info = res3;
+                  body.UserToken = jwt.sign(sign, "dont_be_oversmart");
+                } else {
                   body.UserToken = jwt.sign(sign, "dont_be_oversmart");
                 }
                 return result(null, body);

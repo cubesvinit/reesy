@@ -14,6 +14,8 @@ app.get("/", function (req, res) {
 const usersRoutes = require("./routes/user.route.js");
 app.use("/", usersRoutes);
 
+const providerRoutes = require("./routes/provider.route.js");
+app.use("/", providerRoutes);
 
 app.listen(port, function (error) {
   if (error) throw error;
