@@ -836,6 +836,27 @@ exports.edit_profile = (req, result) => {
           if (req.body.is_location) {
             update_data.is_location = req.body.is_location;
           }
+          if (req.body.bussiness_name) {
+            update_data.bussiness_name = req.body.bussiness_name;
+          }
+          if (req.body.street_address1) {
+            update_data.street_address1 = req.body.street_address1;
+          }
+          if (req.body.street_address2) {
+            update_data.street_address2 = req.body.street_address2;
+          }
+          if (req.body.city) {
+            update_data.city = req.body.city;
+          }
+          if (req.body.zipcode) {
+            update_data.zipcode = req.body.zipcode;
+          }
+          if (req.body.bussiness_lat) {
+            update_data.bussiness_lat = req.body.bussiness_lat;
+          }
+          if (req.body.bussiness_long) {
+            update_data.bussiness_long = req.body.bussiness_long;
+          }
           if (req.files != undefined) {
             if (req.files.profile_pic) {
               try {
