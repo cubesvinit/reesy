@@ -6,7 +6,7 @@ const db = mysql.createConnection({
   password: "",
   database: "reesy",
   charset: 'utf8mb4',
-//   socketPath: '/var/run/mysqld/mysqld.sock',
+  // socketPath: '/var/run/mysqld/mysqld.sock',
 });
 
 db.connect(function (err) {

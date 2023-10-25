@@ -11,6 +11,7 @@ router.post("/list_benefit", providerController.list_benefit);
 router.post("/list_service_gender", providerController.list_service_gender);
 router.post("/list_service_color", providerController.list_service_color);
 router.post("/list_amenities", providerController.list_amenities);
+router.post("/list_avtar", providerController.list_avtar);
 
 router.post(
   "/upload_profile_pic",
@@ -28,13 +29,14 @@ router.post(
     check("iso_code").not().isEmpty().trim().escape(),
     check("phone_number").not().isEmpty().trim().escape(),
     check("street_address1").not().isEmpty().trim().escape(),
-    check("street_address2").not().isEmpty().trim().escape(),
     check("city").not().isEmpty().trim().escape(),
     check("zipcode").not().isEmpty().trim().escape(),
     check("bussiness_lat").not().isEmpty().trim().escape(),
     check("bussiness_long").not().isEmpty().trim().escape(),
     check("benefit_id").not().isEmpty().trim().escape(),
     check("gender_id").not().isEmpty().trim().escape(),
+    check("membership_protection").not().isEmpty().trim().escape(),
+    check("agreement_protection").not().isEmpty().trim().escape(),
   ],
   [authenticate],
   providerController.account_setup
@@ -150,6 +152,96 @@ router.post(
   [check("amenity_id").not().isEmpty().trim().escape()],
   [authenticate],
   providerController.edit_provider_amenities
+);
+
+router.post(
+  "/list_review",
+  [check("page_no").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.list_review
+);
+
+router.post(
+  "/add_time_reservation",
+  [
+    check("reservation_date").not().isEmpty().trim().escape(),
+    check("start_time").not().isEmpty().trim().escape(),
+    check("end_time").not().isEmpty().trim().escape(),
+    check("member_id").not().isEmpty().trim().escape(),
+    check("reason_text").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.add_time_reservation
+);
+
+router.post(
+  "/edit_time_reservation",
+  [check("reservation_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.edit_time_reservation
+);
+
+router.post(
+  "/delete_time_reservation",
+  [check("reservation_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.delete_time_reservation
+);
+
+router.post(
+  "/add_message_blast",
+  upload.fields([{ name: "image", maxCount: 1 }]),
+  [
+    check("is_active").not().isEmpty().trim().escape(),
+    check("regular_message_text").not().isEmpty().trim().escape(),
+    check("push_message_text").not().isEmpty().trim().escape(),
+    check("message_title").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.add_message_blast
+);
+
+router.post(
+  "/edit_message_blast",
+  upload.fields([{ name: "image", maxCount: 1 }]),
+  [check("message_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.edit_message_blast
+);
+
+router.post(
+  "/promote_saloon",
+  [
+    check("plan").not().isEmpty().trim().escape(),
+    check("promote_id").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.promote_saloon
+);
+
+router.post(
+  "/add_announcement",
+  [
+    check("start_date").not().isEmpty().trim().escape(),
+    check("end_date").not().isEmpty().trim().escape(),
+    check("message_text").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.add_announcement
+);
+
+router.post(
+  "/edit_announcement",
+  [check("announcement_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.edit_announcement
+);
+
+router.post(
+  "/delete_announcement",
+  [check("announcement_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.delete_announcement
 );
 
 module.exports = router;

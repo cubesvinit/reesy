@@ -320,6 +320,7 @@ exports.login = (req, result) => {
   var user_role = req.body.user_role;
   var email_id = req.body.email_id;
   var password = md5(req.body.password);
+  console.log(req.body);
   db.query(
     "SELECT * FROM tbl_users WHERE email_id = ? AND password = ? AND user_role = ?",
     [email_id, password, user_role],
@@ -523,8 +524,8 @@ exports.login_by_thirdparty = (req, result) => {
   }
   var email_id = req.body.email_id ? req.body.email_id : "";
   db.query(
-    "Select * from tbl_users where thirdparty_id = ? OR email_id = ? AND user_role = ?",
-    [req.body.thirdparty_id, email_id, req.body.user_role],
+    "Select * from tbl_users where (thirdparty_id = ? OR email_id = ?)",
+    [req.body.thirdparty_id, email_id],
     (err, data) => {
       if (err) {
         console.log("error: ", err);
@@ -621,6 +622,14 @@ exports.login_by_thirdparty = (req, result) => {
           ) {
             body.Status = 0;
             body.Message = "Please entre valid email";
+            result(null, body);
+            return;
+          } else if (
+            data[0].email_id == req.body.email_id &&
+            data[0].user_role != req.body.user_role
+          ) {
+            body.Status = 0;
+            body.Message = "An account already exists with your email_id";
             result(null, body);
             return;
           } else {
@@ -842,9 +851,6 @@ exports.edit_profile = (req, result) => {
           if (req.body.street_address1) {
             update_data.street_address1 = req.body.street_address1;
           }
-          if (req.body.street_address2) {
-            update_data.street_address2 = req.body.street_address2;
-          }
           if (req.body.city) {
             update_data.city = req.body.city;
           }
@@ -857,25 +863,36 @@ exports.edit_profile = (req, result) => {
           if (req.body.bussiness_long) {
             update_data.bussiness_long = req.body.bussiness_long;
           }
-          if (req.files != undefined) {
-            if (req.files.profile_pic) {
-              try {
-                fs.unlinkSync(req.user.profile_pic);
-              } catch (e) {
-                console.log("Profile pic not found");
-              }
-              var ext = req.files.profile_pic[0].originalname.split(".").pop();
-              ImageUrl_media = req.files.profile_pic[0].filename;
-              ImageUrl_with__ext =
-                req.files.profile_pic[0].filename + "." + ext;
-
-              fs.renameSync(
-                "uploads/images/" + ImageUrl_media,
-                "uploads/images/" + ImageUrl_with__ext
-              );
-              var new_path = "uploads/images/" + ImageUrl_with__ext;
-              update_data.profile_pic = new_path;
+          if (req.body.membership_protection) {
+            update_data.membership_protection = req.body.membership_protection;
+          }
+          if (req.body.agreement_protection) {
+            update_data.agreement_protection = req.body.agreement_protection;
+          }
+          if (req.body.avtar) {
+            try {
+              fs.unlinkSync(req.user.profile_pic);
+            } catch (e) {
+              console.log("Profile pic not found");
             }
+            update_data.profile_pic = req.body.avtar;
+          }
+          if (req.files != undefined && req.files.profile_pic) {
+            try {
+              fs.unlinkSync(req.user.profile_pic);
+            } catch (e) {
+              console.log("Profile pic not found");
+            }
+            var ext = req.files.profile_pic[0].originalname.split(".").pop();
+            ImageUrl_media = req.files.profile_pic[0].filename;
+            ImageUrl_with__ext = req.files.profile_pic[0].filename + "." + ext;
+
+            fs.renameSync(
+              "uploads/images/" + ImageUrl_media,
+              "uploads/images/" + ImageUrl_with__ext
+            );
+            var new_path = "uploads/images/" + ImageUrl_with__ext;
+            update_data.profile_pic = new_path;
           }
           db.query(
             "UPDATE tbl_users SET ? WHERE user_id = ?",
@@ -1034,4 +1051,482 @@ exports.delete_user_account = async (req, result) => {
   }
   await deletedata();
   returnfunction();
+};
+
+exports.add_review = (req, result) => {
+  var body = {};
+  var reviewData = {
+    review_by: req.user.user_id,
+    review_to: req.body.review_to,
+    booking_id: req.body.booking_id,
+    saloon_atmosphere_star: req.body.saloon_atmosphere_star,
+    saloon_service_star: req.body.saloon_service_star,
+    saloon_cleanliness_star: req.body.saloon_cleanliness_star,
+    overall_star: req.body.overall_star,
+    review_text: hee.decode(req.body.review_text),
+  };
+
+  db.query(
+    "SELECT * FROM tbl_review WHERE review_by = ? AND review_to = ? AND booking_id = ?",
+    [reviewData.review_by, reviewData.review_to, reviewData.booking_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+        result(err, null);
+        return;
+      } else {
+        if (res.length <= 0) {
+          db.query(
+            "INSERT INTO tbl_review SET ?",
+            [reviewData],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+                result(err, null);
+                return;
+              } else {
+                var MSG =
+                  req.user.first_name +
+                  " " +
+                  req.user.last_name +
+                  " have been write a review.";
+                var noti_type = 2;
+                usersService.send_notification(
+                  reviewData.review_to,
+                  MSG,
+                  noti_type
+                );
+                var notification_data = {
+                  notification_by: req.user.user_id,
+                  notification_to: reviewData.review_to,
+                  notification_text: MSG,
+                  notification_type: noti_type,
+                };
+                db.query(
+                  "INSERT INTO tbl_notification SET ?",
+                  [notification_data],
+                  (err, resp) => {
+                    if (err) {
+                      console.log("error", err);
+                      result(err, null);
+                      return;
+                    } else {
+                      body.Status = 1;
+                      body.Message = "Review added successful";
+                      result(null, body);
+                      return;
+                    }
+                  }
+                );
+              }
+            }
+          );
+        } else {
+          body.Status = 1;
+          body.Message = "You have already added a review for this booking";
+          result(null, body);
+          return;
+        }
+      }
+    }
+  );
+};
+
+exports.add_support = (req, result) => {
+  var body = {};
+  req.body.user_id = req.user.user_id;
+  req.body.message_text = hee.decode(req.body.message_text);
+  db.query("INSERT INTO tbl_support SET ?", [req.body], (err, res) => {
+    if (err) {
+      console.log("error", err);
+      result(err, null);
+      return;
+    } else {
+      body.Status = 1;
+      body.Message = "Support added successful";
+      result(null, body);
+      return;
+    }
+  });
+};
+
+exports.get_main_data = (req, result) => {
+  var body = {};
+  var limit = 10;
+  var page_no = req.body.page_no;
+  var offset = (page_no - 1) * limit;
+  var curernt_date = moment().format("YYYY-MM-DD");
+  var search = "";
+  if (req.body.search_text) {
+    search = " AND t1.bussiness_name LIKE '%" + req.body.search_text + "%'";
+  }
+  var WHERE = "";
+  if (req.body.category_id != 0) {
+    WHERE = " AND is_category = 1";
+  }
+  if (req.body.benefit_id) {
+    WHERE += " AND is_benefit = 1";
+  } else {
+    req.body.benefit_id = 0;
+  }
+  if (req.body.gender_id) {
+    WHERE += " AND is_gender = 1";
+  } else {
+    req.body.gender_id = 0;
+  }
+  if (req.body.high_rated) {
+    WHERE += " AND star_count >= 4";
+  }
+  var ORDER = " DESC";
+  if (req.body.sort == 0) {
+    ORDER = " ASC";
+  }
+  db.query(
+    "SELECT t1.user_id,t1.bussiness_name,t1.street_address1,\n\
+  t1.city,t1.zipcode,t1.bussiness_lat,t1.bussiness_long,\n\
+  t1.membership_protection,t1.agreement_protection,t3.is_closed,\n\
+  ROUND(IFNULL(AVG(t4.overall_star),0),1)as star_count,\n\
+  COUNT(t5.category_id)as is_category,\n\
+  COUNT(t6.benefit_id)as is_benefit,\n\
+  COUNT(t7.gender_id)as is_gender,\n\
+ (SELECT (t2.image) FROM tbl_workplace_image t2 WHERE t1.user_id = t2.user_id ORDER BY t2.image_id ASC LIMIT 1)as work_image,\n\
+ format(111.111 *\n\
+  DEGREES(ACOS(LEAST(1.0, COS(RADIANS(t1.bussiness_lat))\n\
+       * COS(RADIANS(?))\n\
+       * COS(RADIANS(t1.bussiness_long - ?))\n\
+       + SIN(RADIANS(t1.bussiness_lat))\n\
+       * SIN(RADIANS(?))))), 2) AS new_distance\n\
+ FROM tbl_users t1\n\
+ LEFT JOIN tbl_bussiness_hour t3 ON t3.day = DAYNAME('" +
+      curernt_date +
+      "') AND t3.user_id = t1.user_id\n\
+ LEFT JOIN tbl_review t4 ON t4.review_to = t1.user_id\n\
+ LEFT JOIN tbl_provider_service t5 ON t5.user_id = t1.user_id AND t5.category_id = " +
+      req.body.category_id +
+      "\n\
+ LEFT JOIN tbl_provider_service_benefit t6 ON t6.user_id = t1.user_id AND t6.benefit_id IN ('" +
+      req.body.benefit_id +
+      "')\n\
+ LEFT JOIN tbl_provider_service_gender t7 ON t7.user_id = t1.user_id AND t7.gender_id IN ('" +
+      req.body.gender_id +
+      "')\n\
+  WHERE t1.user_role = 'provider' AND t1.is_account_setup = 1 " +
+      search +
+      " HAVING new_distance <= 50" +
+      WHERE +
+      " ORDER BY t1.user_id " +
+      ORDER +
+      " LIMIT " +
+      limit +
+      " OFFSET " +
+      offset,
+    [req.body.latitude, req.body.longitude, req.body.latitude],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No data found";
+          body.total_page = 0;
+          body.info = [];
+          result(null, body);
+          return;
+        } else {
+          db.query(
+            "SELECT t1.user_id,t1.bussiness_name,t1.street_address1,\n\
+            t1.city,t1.zipcode,t1.bussiness_lat,t1.bussiness_long,\n\
+            t1.membership_protection,t1.agreement_protection,t3.is_closed,\n\
+            ROUND(IFNULL(AVG(t4.overall_star),0),1)as star_count,\n\
+            COUNT(t5.category_id)as is_category,\n\
+            COUNT(t6.benefit_id)as is_benefit,\n\
+            COUNT(t7.gender_id)as is_gender,\n\
+           (SELECT (t2.image) FROM tbl_workplace_image t2 WHERE t1.user_id = t2.user_id ORDER BY t2.image_id ASC LIMIT 1)as work_image,\n\
+           format(111.111 *\n\
+            DEGREES(ACOS(LEAST(1.0, COS(RADIANS(t1.bussiness_lat))\n\
+                 * COS(RADIANS(?))\n\
+                 * COS(RADIANS(t1.bussiness_long - ?))\n\
+                 + SIN(RADIANS(t1.bussiness_lat))\n\
+                 * SIN(RADIANS(?))))), 2) AS new_distance\n\
+           FROM tbl_users t1\n\
+           LEFT JOIN tbl_bussiness_hour t3 ON t3.day = DAYNAME('" +
+              curernt_date +
+              "') AND t3.user_id = t1.user_id\n\
+           LEFT JOIN tbl_review t4 ON t4.review_to = t1.user_id\n\
+           LEFT JOIN tbl_provider_service t5 ON t5.user_id = t1.user_id AND t5.category_id = " +
+              req.body.category_id +
+              "\n\
+           LEFT JOIN tbl_provider_service_benefit t6 ON t6.user_id = t1.user_id AND t6.benefit_id IN ('" +
+              req.body.benefit_id +
+              "')\n\
+           LEFT JOIN tbl_provider_service_gender t7 ON t7.user_id = t1.user_id AND t7.gender_id IN ('" +
+              req.body.gender_id +
+              "')\n\
+            WHERE t1.user_role = 'provider' AND t1.is_account_setup = 1 " +
+              search +
+              " HAVING new_distance <= 50 " +
+              WHERE +
+              " ORDER BY t1.user_id " +
+              ORDER,
+            [req.body.latitude, req.body.longitude, req.body.latitude],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                body.Status = 1;
+                body.Message = "Main data get successful";
+                body.total_page = Math.ceil(res1.length / limit);
+                body.info = res;
+                result(null, body);
+                return;
+              }
+            }
+          );
+        }
+      }
+    }
+  );
+};
+
+exports.like_unlike_saloon = (req, result) => {
+  var body = {};
+  var data = {};
+  data.like_by = req.user.user_id;
+  data.like_to = req.body.user_id;
+  db.query(
+    "SELECT like_id FROM tbl_like_saloon WHERE like_by = ? AND like_to = ?",
+    [data.like_by, data.like_to],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        var like_id = res.length <= 0 ? false : res[0].like_id;
+        if (!like_id) {
+          db.query("INSERT INTO tbl_like_saloon SET ?", [data], (err, res1) => {
+            if (err) {
+              console.log("error", err);
+            } else {
+              body.Status = 1;
+              body.Message = "Saloon Liked successful";
+              result(null, body);
+              return;
+            }
+          });
+        } else {
+          db.query(
+            "DELETE FROM tbl_like_saloon WHERE like_id = ?",
+            [like_id],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                body.Status = 1;
+                body.Message = "Saloon Disliked successful";
+                result(null, body);
+                return;
+              }
+            }
+          );
+        }
+      }
+    }
+  );
+};
+
+exports.get_my_favourite_saloon = (req, result) => {
+  var body = {};
+  var limit = 10;
+  var page_no = req.body.page_no;
+  var offset = (page_no - 1) * limit;
+  var curernt_date = moment().format("YYYY-MM-DD");
+  db.query(
+    "SELECT t1.*,(SELECT COUNT(*) FROM tbl_like_saloon t1 WHERE t1.like_by = ?)as total_data,\n\
+  t2.bussiness_name,t2.street_address1,t2.city,t2.zipcode,t2.bussiness_lat,t2.bussiness_long,\n\
+  t2.membership_protection,t2.agreement_protection,t3.is_closed,\n\
+  (SELECT (t4.image) FROM tbl_workplace_image t4 WHERE t1.like_to = t4.user_id ORDER BY t4.image_id ASC LIMIT 1)as work_image,\n\
+  ROUND(IFNULL((SELECT AVG(t5.overall_star) FROM tbl_review t5 WHERE t1.like_to = t5.review_to),0),1)as star_count\n\
+   FROM tbl_like_saloon t1\n\
+    JOIN tbl_users t2 ON t1.like_to = t2.user_id\n\
+    JOIN tbl_bussiness_hour t3 ON t3.day = DAYNAME('" +
+      curernt_date +
+      "') AND t3.user_id = t1.like_to\n\
+    WHERE t1.like_by = ? ORDER BY t1.like_id DESC LIMIT " +
+      limit +
+      " OFFSET " +
+      offset,
+    [req.user.user_id, req.user.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No data found";
+          body.total_page = 0;
+          body.info = [];
+          result(null, body);
+          return;
+        } else {
+          body.Status = 1;
+          body.Message = "My favourite saloon get successful";
+          body.total_page = Math.ceil(res[0].total_data / limit);
+          body.info = res;
+          result(null, body);
+          return;
+        }
+      }
+    }
+  );
+};
+
+exports.get_saloon_details = async (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT t1.user_id,t1.bussiness_name,t1.street_address1,\n\
+  t1.city,t1.zipcode,bussiness_lat,t1.bussiness_long\n\
+  FROM tbl_users t1 WHERE t1.user_id = ? AND t1.user_role = 'provider'",
+    [req.body.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No saloon found";
+          body.info = {};
+          result(null, body);
+          return;
+        } else {
+          db.query(
+            "SELECT * FROM tbl_workplace_image WHERE user_id = ?",
+            [req.body.user_id],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                db.query(
+                  "SELECT ROUND(IFNULL(AVG(t1.overall_star),0),1)as overall_star,\n\
+                  (SELECT COUNT(*) FROM tbl_review t1 WHERE t1.review_to = ?)as review_count\n\
+                   FROM tbl_review t1 WHERE t1.review_to = ?",
+                  [req.body.user_id, req.body.user_id],
+                  (err, res2) => {
+                    if (err) {
+                      console.log("error", err);
+                    } else {
+                      db.query(
+                        "SELECT t1.review_by,t2.profile_pic\n\
+                        FROM tbl_review t1\n\
+                        LEFT JOIN tbl_users t2 ON t1.review_by = t2.user_id\n\
+                        WHERE t1.review_to = ?",
+                        [req.body.user_id],
+                        (err, res3) => {
+                          if (err) {
+                            console.log("error", err);
+                          } else {
+                            db.query(
+                              "SELECT * FROM tbl_provider_service WHERE user_id = ?",
+                              [req.body.user_id],
+                              (err, res4) => {
+                                if (err) {
+                                  console.log("error", err);
+                                } else {
+                                  db.query(
+                                    "SELECT t1.*,IFNULL(t2.amenity_id,0)as is_select\n\
+                                   FROM tbl_amenities t1\n\
+                                   LEFT JOIN tbl_provider_amenities t2 ON t1.amenity_id = t2.amenity_id AND t2.user_id = ?",
+                                    [req.body.user_id],
+                                    (err, res5) => {
+                                      if (err) {
+                                        console.log("error", err);
+                                      } else {
+                                        db.query(
+                                          "SELECT * FROM tbl_bussiness_hour WHERE user_id = ?",
+                                          [req.body.user_id],
+                                          (err, res6) => {
+                                            if (err) {
+                                              console.log("error", err);
+                                            } else {
+                                              res6.forEach((e, i) => {
+                                                db.query(
+                                                  "SELECT * FROM tbl_bussiness_hour_break WHERE hour_id = ?",
+                                                  [e.hour_id],
+                                                  (err, res7) => {
+                                                    if (err) {
+                                                      console.log("error", err);
+                                                    } else {
+                                                      res6[i]["break"] = res7;
+                                                      if (
+                                                        res6.length - 1 ==
+                                                        i
+                                                      ) {
+                                                        db.query(
+                                                          "SELECT user_id,first_name,last_name,profile_pic FROM tbl_users WHERE added_by = ?",
+                                                          [req.body.user_id],
+                                                          (err, res8) => {
+                                                            if (err) {
+                                                              console.log(
+                                                                "error",
+                                                                err
+                                                              );
+                                                            } else {
+                                                              res[0][
+                                                                "workplace_image"
+                                                              ] = res1;
+                                                              res[0][
+                                                                "review_details"
+                                                              ] =
+                                                                res2.concat(
+                                                                  res3
+                                                                );
+                                                              res[0][
+                                                                "price_list"
+                                                              ] = res4;
+                                                              res[0][
+                                                                "details"
+                                                              ] = res5;
+                                                              res[0][
+                                                                "schedule"
+                                                              ] = res6;
+                                                              res[0]["team"] =
+                                                                res8;
+                                                              body.Status = 1;
+                                                              body.Message =
+                                                                "Saloon details get successful";
+                                                              body.info =
+                                                                res[0];
+                                                              result(
+                                                                null,
+                                                                body
+                                                              );
+                                                              return;
+                                                            }
+                                                          }
+                                                        );
+                                                      }
+                                                    }
+                                                  }
+                                                );
+                                              });
+                                            }
+                                          }
+                                        );
+                                      }
+                                    }
+                                  );
+                                }
+                              }
+                            );
+                          }
+                        }
+                      );
+                    }
+                  }
+                );
+              }
+            }
+          );
+        }
+      }
+    }
+  );
 };

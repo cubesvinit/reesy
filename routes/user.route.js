@@ -114,4 +114,64 @@ router.post(
   usersController.delete_user_account
 );
 
+router.post(
+  "/add_review",
+  [
+    check("review_to").not().isEmpty().trim().escape(),
+    check("booking_id").not().isEmpty().trim().escape(),
+    check("saloon_atmosphere_star").not().isEmpty().trim().escape(),
+    check("saloon_service_star").not().isEmpty().trim().escape(),
+    check("saloon_cleanliness_star").not().isEmpty().trim().escape(),
+    check("overall_star").not().isEmpty().trim().escape(),
+    check("review_text").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  usersController.add_review
+);
+
+router.post(
+  "/add_support",
+  [
+    check("full_name").not().isEmpty().trim().escape(),
+    check("email_id").not().isEmpty().trim().escape(),
+    check("message_text").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  usersController.add_support
+);
+
+router.post(
+  "/get_main_data",
+  [
+    check("latitude").not().isEmpty().trim().escape(),
+    check("longitude").not().isEmpty().trim().escape(),
+    check("category_id").not().isEmpty().trim().escape(),
+    check("page_no").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  usersController.get_main_data
+);
+
+router.post(
+  "/like_unlike_saloon",
+  [check("user_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  usersController.like_unlike_saloon
+);
+
+router.post(
+  "/get_my_favourite_saloon",
+  [check("page_no").not().isEmpty().trim().escape()],
+  [authenticate],
+  usersController.get_my_favourite_saloon
+);
+
+
+router.post(
+  "/get_saloon_details",
+  [check("user_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  usersController.get_saloon_details
+);
+
 module.exports = router;

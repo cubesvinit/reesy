@@ -111,6 +111,23 @@ exports.list_amenities = (req, result) => {
   });
 };
 
+exports.list_avtar = (req, result) => {
+  var body = {};
+  db.query("SELECT t1.* FROM tbl_avtar t1", (err, res) => {
+    if (err) {
+      console.log("error", err);
+      result(err, null);
+      return;
+    } else {
+      body.Status = 1;
+      body.Message = "Avtar listed successful";
+      body.info = res;
+      result(null, body);
+      return;
+    }
+  });
+};
+
 exports.upload_profile_pic = (req, result) => {
   var body = {};
   if (req.files != undefined && req.files.profile_pic) {
@@ -944,6 +961,7 @@ exports.edit_provider_amenities = (req, result) => {
       "SELECT t1.*,\n\
     (SELECT COUNT(*) FROM tbl_provider_amenities t2 WHERE t1.amenity_id = t2.amenity_id AND t2.user_id = ?)as is_select\n\
      FROM tbl_amenities t1",
+      [req.user.user_id],
       (err, resp) => {
         if (err) {
           console.log("error", err);
@@ -997,4 +1015,352 @@ exports.edit_provider_amenities = (req, result) => {
   } else {
     getamenities();
   }
+};
+
+exports.list_review = (req, result) => {
+  var body = {};
+  const limit = 10;
+  const page_no = req.body.page_no;
+  const offset = (page_no - 1) * limit;
+  var user_id = req.body.user_id ? req.body.user_id : req.user.user_id;
+  db.query(
+    "SELECT COUNT(*)as review_count,\n\
+  IFNULL((SELECT AVG(t2.overall_star) FROM tbl_review t2 WHERE t1.review_to = t2.review_to),0)as overall_star,\n\
+  IFNULL((SELECT COUNT(*) FROM tbl_review t3 WHERE t1.review_to = t3.review_to AND t3.overall_star = 1),0)as 1_star_count,\n\
+  IFNULL((SELECT COUNT(*) FROM tbl_review t4 WHERE t1.review_to = t4.review_to AND t4.overall_star = 2),0)as 2_star_count,\n\
+  IFNULL((SELECT COUNT(*) FROM tbl_review t5 WHERE t1.review_to = t5.review_to AND t5.overall_star = 3),0)as 3_star_count,\n\
+  IFNULL((SELECT COUNT(*) FROM tbl_review t6 WHERE t1.review_to = t6.review_to AND t6.overall_star = 4),0)as 4_star_count,\n\
+  IFNULL((SELECT COUNT(*) FROM tbl_review t7 WHERE t1.review_to = t7.review_to AND t7.overall_star = 5),0)as 5_star_count,\n\
+  IFNULL((SELECT AVG(t8.saloon_atmosphere_star) FROM tbl_review t8 WHERE t1.review_to = t8.review_to),0)as saloon_atmosphere_star,\n\
+  IFNULL((SELECT AVG(t9.saloon_service_star) FROM tbl_review t9 WHERE t1.review_to = t9.review_to),0)as saloon_service_star,\n\
+  IFNULL((SELECT AVG(t10.saloon_cleanliness_star) FROM tbl_review t10 WHERE t1.review_to = t10.review_to),0)as saloon_cleanliness_star\n\
+  FROM tbl_review t1 WHERE t1.review_to = ?",
+    [user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+        result(err, null);
+        return;
+      } else {
+        db.query(
+          "SELECT t1.*,t2.first_name,t2.last_name,t2.profile_pic,\n\
+          (SELECT COUNT(*) FROM tbl_review t1 WHERE t1.review_to = ?)as total_data\n\
+           FROM tbl_review t1 \n\
+      LEFT JOIN tbl_users t2 ON t1.review_by = t2.user_id \n\
+      WHERE t1.review_to = ? ORDER BY t1.review_id DESC LIMIT " +
+            limit +
+            " OFFSET " +
+            offset,
+          [user_id, user_id],
+          (err, res1) => {
+            if (err) {
+              console.log("error", err);
+              result(err, null);
+              return;
+            } else {
+              res[0]["review_data"] = res1;
+              body.Status = 1;
+              body.Message = "Review listed successfully";
+              body.total_page =
+                res1.length <= 0 ? 0 : Math.ceil(res1[0].total_data / limit);
+              body.info = res[0];
+              result(null, body);
+              return;
+            }
+          }
+        );
+      }
+    }
+  );
+};
+
+exports.add_time_reservation = (req, result) => {
+  var body = {};
+  req.body.added_by = req.user.user_id;
+  req.body.reason_text = hee.decode(req.body.reason_text);
+  db.query("INSERT INTO tbl_time_reservation SET ?", [req.body], (err, res) => {
+    if (err) {
+      console.log("error", err);
+      result(err, null);
+      return;
+    } else {
+      body.Status = 1;
+      body.Message = "Time Reservation added Successful";
+      result(null, body);
+      return;
+    }
+  });
+};
+
+exports.edit_time_reservation = (req, result) => {
+  var body = {};
+  if (req.body.reason_text) {
+    req.body.reason_text = hee.decode(req.body.reason_text);
+  }
+  db.query(
+    "UPDATE tbl_time_reservation SET ? WHERE reservation_id = ?",
+    [req.body, req.body.reservation_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+        result(err, null);
+        return;
+      } else {
+        db.query(
+          "SELECT * FROM tbl_time_reservation WHERE reservation_id = ?",
+          [req.body.reservation_id],
+          (err, res1) => {
+            if (err) {
+              console.log("error", err);
+              result(err, null);
+              return;
+            } else {
+              body.Status = 1;
+              body.Message = "Reservation get successful";
+              body.info = res1[0];
+              result(null, body);
+              return;
+            }
+          }
+        );
+      }
+    }
+  );
+};
+
+exports.delete_time_reservation = (req, result) => {
+  var body = {};
+  db.query(
+    "DELETE FROM tbl_time_reservation WHERE reservation_id = ?",
+    [req.body.reservation_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+        result(err, null);
+        return;
+      } else {
+        body.Status = 1;
+        body.Message = "Time Reservation deleted Successful";
+        result(null, body);
+        return;
+      }
+    }
+  );
+};
+
+exports.add_message_blast = (req, result) => {
+  var body = {};
+  if (req.files != undefined && req.files.image) {
+    var ext = req.files.image[0].originalname.split(".").pop();
+    var ImageUrl_media = req.files.image[0].filename;
+    var ImageUrl_with__ext = req.files.image[0].filename + "." + ext;
+    fs.renameSync(
+      "uploads/images/" + ImageUrl_media,
+      "uploads/images/" + ImageUrl_with__ext
+    );
+    req.body.image = "uploads/images/" + ImageUrl_with__ext;
+  }
+  req.body.user_id = req.user.user_id;
+  req.body.regular_message_text = hee.decode(req.body.regular_message_text);
+  req.body.push_message_text = hee.decode(req.body.push_message_text);
+  db.query("INSERT INTO tbl_message_blast SET ?", [req.body], (err, res) => {
+    if (err) {
+      console.log("error", err);
+      result(err, null);
+      return;
+    } else {
+      body.Status = 1;
+      body.Message = "Blast message added Successful";
+      result(null, body);
+      return;
+    }
+  });
+};
+
+exports.edit_message_blast = (req, result) => {
+  var body = {};
+  if (req.files != undefined && req.files.image) {
+    var ext = req.files.image[0].originalname.split(".").pop();
+    var ImageUrl_media = req.files.image[0].filename;
+    var ImageUrl_with__ext = req.files.image[0].filename + "." + ext;
+    fs.renameSync(
+      "uploads/images/" + ImageUrl_media,
+      "uploads/images/" + ImageUrl_with__ext
+    );
+    req.body.image = "uploads/images/" + ImageUrl_with__ext;
+  }
+  db.query(
+    "UPDATE tbl_message_blast SET ? WHERE message_id = ?",
+    [req.body, req.body.message_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+        result(err, null);
+        return;
+      } else {
+        db.query(
+          "SELECT * FROM tbl_message_blast WHERE message_id = ?",
+          [req.body.message_id],
+          (err, res1) => {
+            if (err) {
+              console.log("error", err);
+              result(err, null);
+              return;
+            } else {
+              body.Status = 1;
+              body.Message = "Blast message edited Successful";
+              body.info = res1[0];
+              result(null, body);
+              return;
+            }
+          }
+        );
+      }
+    }
+  );
+};
+
+exports.promote_saloon = (req, result) => {
+  var body = {};
+  req.body.user_id = req.user.user_id;
+  if (req.body.promote_id == 0) {
+    db.query(
+      "SELECT * FROM tbl_promote_saloon WHERE user_id = ?",
+      [req.body.user_id],
+      (err, res) => {
+        if (err) {
+          console.log("error", err);
+          result(err, null);
+          return;
+        } else {
+          if (res.length <= 0) {
+            db.query(
+              "INSERT INTO tbl_promote_saloon SET ?",
+              [req.body],
+              (err, res) => {
+                if (err) {
+                  console.log("error", err);
+                  result(err, null);
+                  return;
+                } else {
+                  body.Status = 1;
+                  body.Message = "Promotion added successful";
+                  body.promote_id = res.insertId;
+                  result(null, body);
+                  return;
+                }
+              }
+            );
+          } else {
+            body.Status = 0;
+            body.Message = "You have already promote your saloon";
+            body.promote_id = res[0].promote_id;
+            result(null, body);
+            return;
+          }
+        }
+      }
+    );
+  } else {
+    db.query(
+      "UPDATE tbl_promote_saloon SET ? WHERE promote_id = ?",
+      [req.body, req.body.promote_id],
+      (err, res) => {
+        if (err) {
+          console.log("error", err);
+          result(err, null);
+          return;
+        } else {
+          db.query(
+            "SELECT * FROM tbl_promote_saloon WHERE promote_id = ?",
+            [req.body.promote_id],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+                result(err, null);
+                return;
+              } else {
+                body.Status = 1;
+                body.Message = "Promotion edited successful";
+                body.info = res1[0];
+                result(null, body);
+                return;
+              }
+            }
+          );
+        }
+      }
+    );
+  }
+};
+
+exports.add_announcement = (req, result) => {
+  var body = {};
+  req.body.user_id = req.user.user_id;
+  req.body.message_text = hee.decode(req.body.message_text);
+  db.query("INSERT INTO tbl_announcement SET ?", [req.body], (err, res) => {
+    if (err) {
+      console.log("error", err);
+      result(err, null);
+      return;
+    } else {
+      body.Status = 1;
+      body.Message = "Announcement added Successful";
+      result(null, body);
+      return;
+    }
+  });
+};
+
+exports.edit_announcement = (req, result) => {
+  var body = {};
+  db.query(
+    "UPDATE tbl_announcement SET ? WHERE announcement_id = ?",
+    [req.body, req.body.announcement_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+        result(err, null);
+        return;
+      } else {
+        db.query(
+          "SELECT * FROM tbl_announcement WHERE announcement_id = ?",
+          [req.body.announcement_id],
+          (err, res1) => {
+            if (err) {
+              console.log("error", err);
+              result(err, null);
+              return;
+            } else {
+              body.Status = 1;
+              body.Message = "Announcement edited Successful";
+              body.info = res1[0];
+              result(null, body);
+              return;
+            }
+          }
+        );
+      }
+    }
+  );
+};
+
+exports.delete_announcement = (req, result) => {
+  var body = {};
+  db.query(
+    "DELETE FROM tbl_announcement WHERE announcement_id = ?",
+    [req.body.announcement_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+        result(err, null);
+        return;
+      } else {
+        body.Status = 1;
+        body.Message = "Announcement deleted Successful";
+        result(null, body);
+        return;
+      }
+    }
+  );
 };
