@@ -153,6 +153,18 @@ router.post(
 );
 
 router.post(
+  "/recently_viewed_saloon_data",
+  [
+    check("latitude").not().isEmpty().trim().escape(),
+    check("longitude").not().isEmpty().trim().escape(),
+    check("category_id").not().isEmpty().trim().escape(),
+    check("page_no").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  usersController.recently_viewed_saloon_data
+);
+
+router.post(
   "/like_unlike_saloon",
   [check("user_id").not().isEmpty().trim().escape()],
   [authenticate],
@@ -165,7 +177,6 @@ router.post(
   [authenticate],
   usersController.get_my_favourite_saloon
 );
-
 
 router.post(
   "/get_saloon_details",

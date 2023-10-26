@@ -202,6 +202,20 @@ exports.get_main_data = (req, res) => {
   });
 };
 
+exports.recently_viewed_saloon_data = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  usersService.recently_viewed_saloon_data(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
 exports.like_unlike_saloon = (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

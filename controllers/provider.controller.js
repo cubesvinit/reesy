@@ -91,22 +91,28 @@ exports.list_avtar = (req, res) => {
 };
 
 exports.upload_profile_pic = (req, res) => {
+  // const errors = validationResult(req);
+  // var err = errors.array();
+  // var validateobj = {
+  //   msg: "Invalid value",
+  //   param: "profile_pic",
+  //   location: "body",
+  // };
+  // console.log(req.files);
+  // console.log(req.files.profile_pic);
+  // if (!errors.isEmpty() || req.files == undefined || isEmpty(req.files)) {
+  //   if (!errors.isEmpty() && req.files == undefined) {
+  //     err.push(validateobj);
+  //   } else if (errors.isEmpty() && req.files.profile_pic == undefined) {
+  //     err.push(validateobj);
+  //   } else if (!errors.isEmpty() && req.files.profile_pic != undefined) {
+  //     fs.unlinkSync(req.files.profile_pic);
+  //   }
+  //   return res.status(422).json({ errors: err });
+  // }
   const errors = validationResult(req);
-  var err = errors.array();
-  var validateobj = {
-    msg: "Invalid value",
-    param: "profile_pic",
-    location: "body",
-  };
-  if (!errors.isEmpty() || req.files == undefined || isEmpty(req.files)) {
-    if (!errors.isEmpty() && req.files == undefined) {
-      err.push(validateobj);
-    } else if (errors.isEmpty() && req.files.profile_pic == undefined) {
-      err.push(validateobj);
-    } else if (!errors.isEmpty() && req.files.profile_pic != undefined) {
-      fs.unlinkSync(req.files.profile_pic);
-    }
-    return res.status(422).json({ errors: err });
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
   }
   providerService.upload_profile_pic(req, (err, data) => {
     if (err) {

@@ -143,7 +143,7 @@ exports.upload_profile_pic = (req, result) => {
   body.Status = 1;
   body.Message = "Profile pic uploaded successful";
   body.profile_pic = Image;
-  return result(null, profile_pic);
+  return result(null, body);
 };
 
 exports.account_setup = (req, result) => {
@@ -331,7 +331,8 @@ exports.account_setup = (req, result) => {
                                                                           1 ==
                                                                         i4
                                                                       ) {
-                                                                        var obj2 =
+                                                                        if(m_data){
+                                                                          var obj2 =
                                                                           JSON.parse(
                                                                             m_data
                                                                           );
@@ -422,6 +423,38 @@ exports.account_setup = (req, result) => {
                                                                             );
                                                                           }
                                                                         );
+                                                                        }else{
+                                                                          userService.findByUserId(
+                                                                            req
+                                                                              .user
+                                                                              .user_id,
+                                                                            (
+                                                                              err,
+                                                                              resdata
+                                                                            ) => {
+                                                                              if (
+                                                                                err
+                                                                              ) {
+                                                                                console.log(
+                                                                                  "error",
+                                                                                  err
+                                                                                );
+                                                                              } else {
+                                                                                body.Status = 1;
+                                                                                body.Message =
+                                                                                  "Account setup successful";
+                                                                                body.info =
+                                                                                  resdata;
+                                                                                result(
+                                                                                  null,
+                                                                                  body
+                                                                                );
+                                                                                return;
+                                                                              }
+                                                                            }
+                                                                          );
+                                                                        }
+                                                                       
                                                                       }
                                                                     }
                                                                   }

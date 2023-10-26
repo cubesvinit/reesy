@@ -1288,6 +1288,154 @@ exports.get_main_data = (req, result) => {
   );
 };
 
+exports.recently_viewed_saloon_data = (req, result) => {
+  var body = {};
+  var limit = 10;
+  var page_no = req.body.page_no;
+  var offset = (page_no - 1) * limit;
+  var curernt_date = moment().format("YYYY-MM-DD");
+  var search = "";
+  if (req.body.search_text) {
+    search = " AND t2.bussiness_name LIKE '%" + req.body.search_text + "%'";
+  }
+  var WHERE = "";
+  if (req.body.category_id != 0) {
+    WHERE = " AND is_category = 1";
+  }
+  if (req.body.benefit_id) {
+    WHERE += " AND is_benefit = 1";
+  } else {
+    req.body.benefit_id = 0;
+  }
+  if (req.body.gender_id) {
+    WHERE += " AND is_gender = 1";
+  } else {
+    req.body.gender_id = 0;
+  }
+  if (req.body.high_rated) {
+    WHERE += " AND star_count >= 4";
+  }
+  var ORDER = " DESC";
+  if (req.body.sort == 0) {
+    ORDER = " ASC";
+  }
+  db.query(
+    "SELECT t1.*,\n\
+    t2.bussiness_name,t2.street_address1,t2.city,t2.zipcode,t2.bussiness_lat,t2.bussiness_long,\n\
+    t2.membership_protection,t2.agreement_protection,t3.is_closed,\n\
+    COUNT(t6.category_id)as is_category,\n\
+  COUNT(t7.benefit_id)as is_benefit,\n\
+  COUNT(t8.gender_id)as is_gender,\n\
+    (SELECT (t4.image) FROM tbl_workplace_image t4 WHERE t1.view_to = t4.user_id ORDER BY t4.image_id ASC LIMIT 1)as work_image,\n\
+    ROUND(IFNULL((SELECT AVG(t5.overall_star) FROM tbl_review t5 WHERE t1.view_to = t5.review_to),0),1)as star_count,\n\
+    format(111.111 *\n\
+      DEGREES(ACOS(LEAST(1.0, COS(RADIANS(t2.bussiness_lat))\n\
+           * COS(RADIANS(?))\n\
+           * COS(RADIANS(t2.bussiness_long - ?))\n\
+           + SIN(RADIANS(t2.bussiness_lat))\n\
+           * SIN(RADIANS(?))))), 2) AS new_distance\n\
+     FROM tbl_most_viewed_saloon t1\n\
+      JOIN tbl_users t2 ON t1.view_to = t2.user_id\n\
+      JOIN tbl_bussiness_hour t3 ON t3.day = DAYNAME('" +
+      curernt_date +
+      "') AND t3.user_id = t1.view_to\n\
+        LEFT JOIN tbl_provider_service t6 ON t6.user_id = t1.view_to AND t6.category_id = " +
+      req.body.category_id +
+      "\n\
+   LEFT JOIN tbl_provider_service_benefit t7 ON t7.user_id = t1.view_to AND t7.benefit_id IN ('" +
+      req.body.benefit_id +
+      "')\n\
+   LEFT JOIN tbl_provider_service_gender t8 ON t8.user_id = t1.view_to AND t8.gender_id IN ('" +
+      req.body.gender_id +
+      "')\n\
+      WHERE t1.view_by = ? " +
+      search +
+      " HAVING new_distance <= 50" +
+      WHERE +
+      " ORDER BY t1.view_id " +
+      ORDER +
+      " LIMIT " +
+      limit +
+      " OFFSET " +
+      offset,
+    [
+      req.body.latitude,
+      req.body.longitude,
+      req.body.latitude,
+      req.user.user_id,
+    ],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No data found";
+          body.total_page = 0;
+          body.info = [];
+          result(null, body);
+          return;
+        } else {
+          db.query(
+            "SELECT t1.*,\n\
+            t2.bussiness_name,t2.street_address1,t2.city,t2.zipcode,t2.bussiness_lat,t2.bussiness_long,\n\
+            t2.membership_protection,t2.agreement_protection,t3.is_closed,\n\
+            COUNT(t6.category_id)as is_category,\n\
+          COUNT(t7.benefit_id)as is_benefit,\n\
+          COUNT(t8.gender_id)as is_gender,\n\
+            (SELECT (t4.image) FROM tbl_workplace_image t4 WHERE t1.view_to = t4.user_id ORDER BY t4.image_id ASC LIMIT 1)as work_image,\n\
+            ROUND(IFNULL((SELECT AVG(t5.overall_star) FROM tbl_review t5 WHERE t1.view_to = t5.review_to),0),1)as star_count,\n\
+            format(111.111 *\n\
+              DEGREES(ACOS(LEAST(1.0, COS(RADIANS(t2.bussiness_lat))\n\
+                   * COS(RADIANS(?))\n\
+                   * COS(RADIANS(t2.bussiness_long - ?))\n\
+                   + SIN(RADIANS(t2.bussiness_lat))\n\
+                   * SIN(RADIANS(?))))), 2) AS new_distance\n\
+             FROM tbl_most_viewed_saloon t1\n\
+              JOIN tbl_users t2 ON t1.view_to = t2.user_id\n\
+              JOIN tbl_bussiness_hour t3 ON t3.day = DAYNAME('" +
+              curernt_date +
+              "') AND t3.user_id = t1.view_to\n\
+                LEFT JOIN tbl_provider_service t6 ON t6.user_id = t1.view_to AND t6.category_id = " +
+              req.body.category_id +
+              "\n\
+           LEFT JOIN tbl_provider_service_benefit t7 ON t7.user_id = t1.view_to AND t7.benefit_id IN ('" +
+              req.body.benefit_id +
+              "')\n\
+           LEFT JOIN tbl_provider_service_gender t8 ON t8.user_id = t1.view_to AND t8.gender_id IN ('" +
+              req.body.gender_id +
+              "')\n\
+              WHERE t1.view_by = ? " +
+              search +
+              " HAVING new_distance <= 50" +
+              WHERE +
+              " ORDER BY t1.view_id " +
+              ORDER,
+            [
+              req.body.latitude,
+              req.body.longitude,
+              req.body.latitude,
+              req.user.user_id,
+            ],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                body.Status = 1;
+                body.Message = "Main data get successful";
+                body.total_page = Math.ceil(res1.length / limit);
+                body.info = res;
+                result(null, body);
+                return;
+              }
+            }
+          );
+        }
+      }
+    }
+  );
+};
+
 exports.like_unlike_saloon = (req, result) => {
   var body = {};
   var data = {};
@@ -1381,6 +1529,50 @@ exports.get_my_favourite_saloon = (req, result) => {
 
 exports.get_saloon_details = async (req, result) => {
   var body = {};
+  function mostviewdata() {
+    db.query(
+      "SELECT * FROM tbl_most_viewed_saloon WHERE view_by = ? AND view_to = ?",
+      [req.user.user_id, req.body.user_id],
+      (err, resp) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          if (resp.length <= 0) {
+            db.query(
+              "INSERT INTO tbl_most_viewed_saloon(view_by,view_to)VALUES(?,?)",
+              [req.user.user_id, req.body.user_id],
+              (err, resp1) => {
+                if (err) {
+                  console.log("error", err);
+                }
+              }
+            );
+          } else {
+            db.query(
+              "DELETE FROM tbl_most_viewed_saloon WHERE view_id = ?",
+              [resp[0].view_id],
+              (err, resp1) => {
+                if (err) {
+                  console.log("error", err);
+                } else {
+                  db.query(
+                    "INSERT INTO tbl_most_viewed_saloon(view_by,view_to)VALUES(?,?)",
+                    [req.user.user_id, req.body.user_id],
+                    (err, resp2) => {
+                      if (err) {
+                        console.log("error", err);
+                      }
+                    }
+                  );
+                }
+              }
+            );
+          }
+        }
+      }
+    );
+  }
+
   db.query(
     "SELECT t1.user_id,t1.bussiness_name,t1.street_address1,\n\
   t1.city,t1.zipcode,bussiness_lat,t1.bussiness_long\n\
@@ -1469,6 +1661,7 @@ exports.get_saloon_details = async (req, result) => {
                                                                 err
                                                               );
                                                             } else {
+                                                              mostviewdata();
                                                               res[0][
                                                                 "workplace_image"
                                                               ] = res1;
