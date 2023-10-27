@@ -463,11 +463,18 @@ exports.verification_for_email = (req, result) => {
                     : "Email verification successfully done";
 
                 if (
-                  (req.body.is_login == 0 && res1.user_role == "user") ||
-                  req.body.is_login == 1
+                  (req.body.is_login == 0 || req.body.is_login == 1) &&
+                  res1.user_role == "user"
                 ) {
                   body.info = res3;
                   body.UserToken = jwt.sign(sign, "dont_be_oversmart");
+                } else if (
+                  (req.body.is_login == 0 || req.body.is_login == 1) &&
+                  res1.user_role == "provider"
+                ) {
+                  body.UserToken = jwt.sign(sign, "dont_be_oversmart");
+                  body.first_name = res3.first_name;
+                  body.last_name = res3.last_name;
                 } else {
                   body.UserToken = jwt.sign(sign, "dont_be_oversmart");
                 }
@@ -475,17 +482,17 @@ exports.verification_for_email = (req, result) => {
               }
             });
           } else {
-            (body.Status = 0),
-              (body.Message = "Wrong email OTP"),
-              (body.info = {}),
-              result(null, body);
+            body.Status = 0;
+            body.Message = "Wrong email OTP";
+            body.info = {};
+            result(null, body);
             return;
           }
         });
       } else {
-        (body.Status = 0),
-          (body.Message = "Email id Does not match over records"),
-          result(null, body);
+        body.Status = 0;
+        body.Message = "Email id Does not match over records";
+        result(null, body);
         return;
       }
     }
