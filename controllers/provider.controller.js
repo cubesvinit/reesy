@@ -91,25 +91,6 @@ exports.list_avtar = (req, res) => {
 };
 
 exports.upload_profile_pic = (req, res) => {
-  // const errors = validationResult(req);
-  // var err = errors.array();
-  // var validateobj = {
-  //   msg: "Invalid value",
-  //   param: "profile_pic",
-  //   location: "body",
-  // };
-  // console.log(req.files);
-  // console.log(req.files.profile_pic);
-  // if (!errors.isEmpty() || req.files == undefined || isEmpty(req.files)) {
-  //   if (!errors.isEmpty() && req.files == undefined) {
-  //     err.push(validateobj);
-  //   } else if (errors.isEmpty() && req.files.profile_pic == undefined) {
-  //     err.push(validateobj);
-  //   } else if (!errors.isEmpty() && req.files.profile_pic != undefined) {
-  //     fs.unlinkSync(req.files.profile_pic);
-  //   }
-  //   return res.status(422).json({ errors: err });
-  // }
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(422).json({ errors: errors.array() });
@@ -185,6 +166,33 @@ exports.delete_service = (req, res) => {
     return res.status(422).json({ errors: errors.array() });
   }
   providerService.delete_service(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.add_workplace_image = (req, res) => {
+  const errors = validationResult(req);
+  var err = errors.array();
+  var validateobj = {
+    msg: "Invalid value",
+    param: "image",
+    location: "body",
+  };
+  if (req.files == undefined || isEmpty(req.files)) {
+    if (req.files == undefined) {
+      err.push(validateobj);
+    } else if (req.files.image == undefined) {
+      err.push(validateobj);
+    } else if (req.files.image != undefined) {
+      fs.unlinkSync(req.files.image);
+    }
+    return res.status(422).json({ errors: err });
+  }
+  providerService.add_workplace_image(req, (err, data) => {
     if (err) {
       return res.status(400).json(err);
     } else {
@@ -443,6 +451,20 @@ exports.edit_message_blast = (req, res) => {
   });
 };
 
+exports.list_promote_plan = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.list_promote_plan(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
 exports.promote_saloon = (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -491,6 +513,104 @@ exports.delete_announcement = (req, res) => {
     return res.status(422).json({ errors: errors.array() });
   }
   providerService.delete_announcement(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.add_flash_sale_promotion = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.add_flash_sale_promotion(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.edit_flash_sale_promotion = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.edit_flash_sale_promotion(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.delete_promotion = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.delete_promotion(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.add_last_minute_discount = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.add_last_minute_discount(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.edit_last_minute_discount = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.edit_last_minute_discount(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.get_happy_hour = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.get_happy_hour(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.edit_daywise_happy_hour = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.edit_daywise_happy_hour(req, (err, data) => {
     if (err) {
       return res.status(400).json(err);
     } else {

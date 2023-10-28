@@ -77,6 +77,13 @@ router.post(
 );
 
 router.post(
+  "/add_workplace_image",
+  [check("image").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.add_workplace_image
+);
+
+router.post(
   "/list_workplace_image",
   [authenticate],
   providerController.list_workplace_image
@@ -204,16 +211,17 @@ router.post(
 router.post(
   "/edit_message_blast",
   upload.fields([{ name: "image", maxCount: 1 }]),
-  [check("message_id").not().isEmpty().trim().escape()],
   [authenticate],
   providerController.edit_message_blast
 );
 
+router.post("/list_promote_plan", providerController.list_promote_plan);
+
 router.post(
   "/promote_saloon",
   [
-    check("plan").not().isEmpty().trim().escape(),
-    check("promote_id").not().isEmpty().trim().escape(),
+    check("plan_id").not().isEmpty().trim().escape(),
+    check("start_date").not().isEmpty().trim().escape(),
   ],
   [authenticate],
   providerController.promote_saloon
@@ -232,16 +240,68 @@ router.post(
 
 router.post(
   "/edit_announcement",
-  [check("announcement_id").not().isEmpty().trim().escape()],
   [authenticate],
   providerController.edit_announcement
 );
 
 router.post(
   "/delete_announcement",
-  [check("announcement_id").not().isEmpty().trim().escape()],
   [authenticate],
   providerController.delete_announcement
+);
+
+router.post(
+  "/add_flash_sale_promotion",
+  [
+    check("discount").not().isEmpty().trim().escape(),
+    check("time_period").not().isEmpty().trim().escape(),
+    check("service_id").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.add_flash_sale_promotion
+);
+
+router.post(
+  "/edit_flash_sale_promotion",
+  [authenticate],
+  providerController.edit_flash_sale_promotion
+);
+
+router.post(
+  "/delete_promotion",
+  [check("promotion_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.delete_promotion
+);
+
+router.post(
+  "/add_last_minute_discount",
+  [
+    check("discount").not().isEmpty().trim().escape(),
+    check("booking_window_hour").not().isEmpty().trim().escape(),
+    check("service_id").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.add_last_minute_discount
+);
+
+router.post(
+  "/edit_last_minute_discount",
+  [authenticate],
+  providerController.edit_last_minute_discount
+);
+
+router.post(
+  "/get_happy_hour",
+  [authenticate],
+  providerController.get_happy_hour
+);
+
+router.post(
+  "/edit_daywise_happy_hour",
+  [check("promotion_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.edit_daywise_happy_hour
 );
 
 module.exports = router;

@@ -331,99 +331,101 @@ exports.account_setup = (req, result) => {
                                                                           1 ==
                                                                         i4
                                                                       ) {
-                                                                        if(m_data){
+                                                                        if (
+                                                                          m_data
+                                                                        ) {
                                                                           var obj2 =
-                                                                          JSON.parse(
-                                                                            m_data
-                                                                          );
-                                                                        obj2.forEach(
-                                                                          (
-                                                                            e5,
-                                                                            i5
-                                                                          ) => {
-                                                                            var member_data =
-                                                                              {
-                                                                                added_by:
-                                                                                  req
-                                                                                    .user
-                                                                                    .user_id,
-                                                                                first_name:
-                                                                                  e5.first_name,
-                                                                                last_name:
-                                                                                  e5.last_name,
-                                                                                country_code:
-                                                                                  e5.country_code,
-                                                                                iso_code:
-                                                                                  e5.iso_code,
-                                                                                phone_number:
-                                                                                  e5.phone_number,
-                                                                                email_id:
-                                                                                  e5.email_id,
-                                                                                is_available:
-                                                                                  e5.is_available,
-                                                                                profile_pic:
-                                                                                  e5.profile_pic,
-                                                                                user_role:
-                                                                                  "member",
-                                                                              };
-                                                                            db.query(
-                                                                              "INSERT INTO tbl_users SET ?",
-                                                                              [
-                                                                                member_data,
-                                                                              ],
-                                                                              (
-                                                                                err,
-                                                                                res8
-                                                                              ) => {
-                                                                                if (
-                                                                                  err
-                                                                                ) {
-                                                                                  console.log(
-                                                                                    "error",
-                                                                                    err
-                                                                                  );
-                                                                                } else {
+                                                                            JSON.parse(
+                                                                              m_data
+                                                                            );
+                                                                          obj2.forEach(
+                                                                            (
+                                                                              e5,
+                                                                              i5
+                                                                            ) => {
+                                                                              var member_data =
+                                                                                {
+                                                                                  added_by:
+                                                                                    req
+                                                                                      .user
+                                                                                      .user_id,
+                                                                                  first_name:
+                                                                                    e5.first_name,
+                                                                                  last_name:
+                                                                                    e5.last_name,
+                                                                                  country_code:
+                                                                                    e5.country_code,
+                                                                                  iso_code:
+                                                                                    e5.iso_code,
+                                                                                  phone_number:
+                                                                                    e5.phone_number,
+                                                                                  email_id:
+                                                                                    e5.email_id,
+                                                                                  is_available:
+                                                                                    e5.is_available,
+                                                                                  profile_pic:
+                                                                                    e5.profile_pic,
+                                                                                  user_role:
+                                                                                    "member",
+                                                                                };
+                                                                              db.query(
+                                                                                "INSERT INTO tbl_users SET ?",
+                                                                                [
+                                                                                  member_data,
+                                                                                ],
+                                                                                (
+                                                                                  err,
+                                                                                  res8
+                                                                                ) => {
                                                                                   if (
-                                                                                    obj2.length -
-                                                                                      1 ==
-                                                                                    i5
+                                                                                    err
                                                                                   ) {
-                                                                                    userService.findByUserId(
-                                                                                      req
-                                                                                        .user
-                                                                                        .user_id,
-                                                                                      (
-                                                                                        err,
-                                                                                        resdata
-                                                                                      ) => {
-                                                                                        if (
-                                                                                          err
-                                                                                        ) {
-                                                                                          console.log(
-                                                                                            "error",
-                                                                                            err
-                                                                                          );
-                                                                                        } else {
-                                                                                          body.Status = 1;
-                                                                                          body.Message =
-                                                                                            "Account setup successful";
-                                                                                          body.info =
-                                                                                            resdata;
-                                                                                          result(
-                                                                                            null,
-                                                                                            body
-                                                                                          );
-                                                                                          return;
-                                                                                        }
-                                                                                      }
+                                                                                    console.log(
+                                                                                      "error",
+                                                                                      err
                                                                                     );
+                                                                                  } else {
+                                                                                    if (
+                                                                                      obj2.length -
+                                                                                        1 ==
+                                                                                      i5
+                                                                                    ) {
+                                                                                      userService.findByUserId(
+                                                                                        req
+                                                                                          .user
+                                                                                          .user_id,
+                                                                                        (
+                                                                                          err,
+                                                                                          resdata
+                                                                                        ) => {
+                                                                                          if (
+                                                                                            err
+                                                                                          ) {
+                                                                                            console.log(
+                                                                                              "error",
+                                                                                              err
+                                                                                            );
+                                                                                          } else {
+                                                                                            body.Status = 1;
+                                                                                            body.Message =
+                                                                                              "Account setup successful";
+                                                                                            body.info =
+                                                                                              resdata;
+                                                                                            result(
+                                                                                              null,
+                                                                                              body
+                                                                                            );
+                                                                                            return;
+                                                                                          }
+                                                                                        }
+                                                                                      );
+                                                                                    }
                                                                                   }
                                                                                 }
-                                                                              }
-                                                                            );
-                                                                          }
-                                                                        );
-                                                                        }else{
+                                                                              );
+                                                                            }
+                                                                          );
+                                                                        } else {
                                                                           userService.findByUserId(
                                                                             req
                                                                               .user
@@ -454,7 +456,6 @@ exports.account_setup = (req, result) => {
                                                                             }
                                                                           );
                                                                         }
-                                                                       
                                                                       }
                                                                     }
                                                                   }
@@ -615,6 +616,36 @@ exports.delete_service = (req, result) => {
       }
     }
   );
+};
+
+exports.add_workplace_image = (req, result) => {
+  var body = {};
+  req.files["image"].forEach((image, index) => {
+    var ext = image.originalname.split(".").pop();
+    var ImageUrl_media = image.filename;
+    var ImageUrl_with__ext = image.filename + "." + ext;
+    fs.renameSync(
+      "uploads/images/" + ImageUrl_media,
+      "uploads/images/" + ImageUrl_with__ext
+    );
+    var Image = "uploads/images/" + ImageUrl_with__ext;
+    db.query(
+      "INSERT INTO tbl_workplace_image(user_id,image) VALUES(?,?)",
+      [req.user.user_id, Image],
+      (err, res2) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          if (req.files["image"].length - 1 == index) {
+            body.Status = 1;
+            body.Message = "Image uploaded successfully";
+            result(null, body);
+            return;
+          }
+        }
+      }
+    );
+  });
 };
 
 exports.list_workplace_image = (req, result) => {
@@ -1222,9 +1253,10 @@ exports.edit_message_blast = (req, result) => {
     );
     req.body.image = "uploads/images/" + ImageUrl_with__ext;
   }
+  req.body.user_id = req.user.user_id;
   db.query(
-    "UPDATE tbl_message_blast SET ? WHERE message_id = ?",
-    [req.body, req.body.message_id],
+    "UPDATE tbl_message_blast SET ? WHERE user_id = ?",
+    [req.body, req.body.user_id],
     (err, res) => {
       if (err) {
         console.log("error", err);
@@ -1232,19 +1264,27 @@ exports.edit_message_blast = (req, result) => {
         return;
       } else {
         db.query(
-          "SELECT * FROM tbl_message_blast WHERE message_id = ?",
-          [req.body.message_id],
+          "SELECT * FROM tbl_message_blast WHERE user_id = ?",
+          [req.body.user_id],
           (err, res1) => {
             if (err) {
               console.log("error", err);
               result(err, null);
               return;
             } else {
-              body.Status = 1;
-              body.Message = "Blast message edited Successful";
-              body.info = res1[0];
-              result(null, body);
-              return;
+              if (res1.length <= 0) {
+                body.Status = 1;
+                body.Message = "No data found";
+                body.info = {};
+                result(null, body);
+                return;
+              } else {
+                body.Status = 1;
+                body.Message = "Blast message edited Successful";
+                body.info = res1[0];
+                result(null, body);
+                return;
+              }
             }
           }
         );
@@ -1253,32 +1293,77 @@ exports.edit_message_blast = (req, result) => {
   );
 };
 
+exports.list_promote_plan = (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT * FROM tbl_promote_plan ORDER BY plan_id ASC",
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+        result(err, null);
+        return;
+      } else {
+        body.Status = 1;
+        body.Message = "Promote plan listed Successful";
+        body.info = res;
+        result(null, body);
+        return;
+      }
+    }
+  );
+};
+
 exports.promote_saloon = (req, result) => {
   var body = {};
   req.body.user_id = req.user.user_id;
-  if (req.body.promote_id == 0) {
-    db.query(
-      "SELECT * FROM tbl_promote_saloon WHERE user_id = ?",
-      [req.body.user_id],
-      (err, res) => {
-        if (err) {
-          console.log("error", err);
-          result(err, null);
-          return;
+  db.query(
+    "SELECT * FROM tbl_promote_saloon WHERE user_id = ? ORDER BY promote_id DESC LIMIT 1",
+    [req.user.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (req.body.plan_id == 1) {
+          req.body.end_date = moment(req.body.start_date)
+            .add(6, "days")
+            .format("YYYY-MM-DD");
+        } else if (req.body.plan_id == 2) {
+          req.body.end_date = moment(req.body.start_date)
+            .add(1, "M")
+            .format("YYYY-MM-DD");
         } else {
-          if (res.length <= 0) {
+          req.body.end_date = moment(req.body.start_date)
+            .add(6, "M")
+            .format("YYYY-MM-DD");
+        }
+        if (res.length <= 0) {
+          db.query(
+            "INSERT INTO tbl_promote_saloon SET ?",
+            [req.body],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                body.Status = 1;
+                body.Message = "Saloon promoted successful";
+                result(null, body);
+                return;
+              }
+            }
+          );
+        } else {
+          if (
+            moment(res[0].end_date).format("YYYY-MM-DD") < req.body.start_date
+          ) {
             db.query(
               "INSERT INTO tbl_promote_saloon SET ?",
               [req.body],
-              (err, res) => {
+              (err, res1) => {
                 if (err) {
                   console.log("error", err);
-                  result(err, null);
-                  return;
                 } else {
                   body.Status = 1;
-                  body.Message = "Promotion added successful";
-                  body.promote_id = res.insertId;
+                  body.Message = "Saloon promoted successful";
                   result(null, body);
                   return;
                 }
@@ -1286,70 +1371,59 @@ exports.promote_saloon = (req, result) => {
             );
           } else {
             body.Status = 0;
-            body.Message = "You have already promote your saloon";
-            body.promote_id = res[0].promote_id;
+            body.Message = "Your Promote Plan is already active";
             result(null, body);
             return;
           }
         }
       }
-    );
-  } else {
-    db.query(
-      "UPDATE tbl_promote_saloon SET ? WHERE promote_id = ?",
-      [req.body, req.body.promote_id],
-      (err, res) => {
-        if (err) {
-          console.log("error", err);
-          result(err, null);
-          return;
-        } else {
-          db.query(
-            "SELECT * FROM tbl_promote_saloon WHERE promote_id = ?",
-            [req.body.promote_id],
-            (err, res1) => {
-              if (err) {
-                console.log("error", err);
-                result(err, null);
-                return;
-              } else {
-                body.Status = 1;
-                body.Message = "Promotion edited successful";
-                body.info = res1[0];
-                result(null, body);
-                return;
-              }
-            }
-          );
-        }
-      }
-    );
-  }
+    }
+  );
 };
 
 exports.add_announcement = (req, result) => {
   var body = {};
   req.body.user_id = req.user.user_id;
   req.body.message_text = hee.decode(req.body.message_text);
-  db.query("INSERT INTO tbl_announcement SET ?", [req.body], (err, res) => {
-    if (err) {
-      console.log("error", err);
-      result(err, null);
-      return;
-    } else {
-      body.Status = 1;
-      body.Message = "Announcement added Successful";
-      result(null, body);
-      return;
+  db.query(
+    "SELECT * FROM tbl_announcement WHERE user_id = ?",
+    [req.body.user_id],
+    (err, resp) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (resp.length <= 0) {
+          db.query(
+            "INSERT INTO tbl_announcement SET ?",
+            [req.body],
+            (err, res) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                body.Status = 1;
+                body.Message = "Announcement added Successful";
+                result(null, body);
+                return;
+              }
+            }
+          );
+        } else {
+          body.Status = 0;
+          body.Message = "You have already added Announcement";
+          result(null, body);
+          return;
+        }
+      }
     }
-  });
+  );
 };
 
 exports.edit_announcement = (req, result) => {
   var body = {};
+  req.body.user_id = req.user.user_id;
   db.query(
-    "UPDATE tbl_announcement SET ? WHERE announcement_id = ?",
-    [req.body, req.body.announcement_id],
+    "UPDATE tbl_announcement SET ? WHERE user_id = ?",
+    [req.body, req.user.user_id],
     (err, res) => {
       if (err) {
         console.log("error", err);
@@ -1357,19 +1431,27 @@ exports.edit_announcement = (req, result) => {
         return;
       } else {
         db.query(
-          "SELECT * FROM tbl_announcement WHERE announcement_id = ?",
-          [req.body.announcement_id],
+          "SELECT * FROM tbl_announcement WHERE user_id = ?",
+          [req.user.user_id],
           (err, res1) => {
             if (err) {
               console.log("error", err);
               result(err, null);
               return;
             } else {
-              body.Status = 1;
-              body.Message = "Announcement edited Successful";
-              body.info = res1[0];
-              result(null, body);
-              return;
+              if (res1.length <= 0) {
+                body.Status = 1;
+                body.Message = "No data found";
+                body.info = {};
+                result(null, body);
+                return;
+              } else {
+                body.Status = 1;
+                body.Message = "Announcement edited Successful";
+                body.info = res1[0];
+                result(null, body);
+                return;
+              }
             }
           }
         );
@@ -1381,8 +1463,8 @@ exports.edit_announcement = (req, result) => {
 exports.delete_announcement = (req, result) => {
   var body = {};
   db.query(
-    "DELETE FROM tbl_announcement WHERE announcement_id = ?",
-    [req.body.announcement_id],
+    "DELETE FROM tbl_announcement WHERE user_id = ?",
+    [req.user.user_id],
     (err, res) => {
       if (err) {
         console.log("error", err);
@@ -1393,6 +1475,508 @@ exports.delete_announcement = (req, result) => {
         body.Message = "Announcement deleted Successful";
         result(null, body);
         return;
+      }
+    }
+  );
+};
+
+exports.add_flash_sale_promotion = (req, result) => {
+  var body = {};
+  var serviceId = req.body.service_id;
+  req.body.user_id = req.user.user_id;
+  req.body.type = 1;
+  DeleteKeys(req.body, ["service_id"]);
+  db.query(
+    "SELECT * FROM tbl_promotion WHERE user_id = ? AND type = 1",
+    [req.body.user_id],
+    (err, resp) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (resp.length <= 0) {
+          db.query(
+            "INSERT INTO tbl_promotion SET ?",
+            [req.body],
+            (err, res) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                s_id =
+                  serviceId.length == 1 ? [serviceId] : serviceId.split(",");
+                s_id.forEach((e, i) => {
+                  db.query(
+                    "INSERT INTO tbl_service_promotion(promotion_id,type,service_id,user_id)VALUES(?,?,?,?)",
+                    [res.insertId, req.body.type, e, req.body.user_id],
+                    (err, res1) => {
+                      if (err) {
+                        console.log("error", err);
+                      } else {
+                        if (s_id.length - 1 == i) {
+                          body.Status = 1;
+                          body.Message =
+                            "Flash Sale Promotion Added Successful";
+                          result(null, body);
+                          return;
+                        }
+                      }
+                    }
+                  );
+                });
+              }
+            }
+          );
+        } else {
+          body.Status = 0;
+          body.Message = "You have already added Flash Sale Promotion";
+          result(null, body);
+          return;
+        }
+      }
+    }
+  );
+};
+
+exports.edit_flash_sale_promotion = (req, result) => {
+  var body = {};
+  function getdata() {
+    db.query(
+      "SELECT * FROM tbl_promotion WHERE user_id = ? AND type = 1",
+      [req.body.user_id],
+      (err, res4) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          if (res4.length <= 0) {
+            body.Status = 1;
+            body.Message = "No data found";
+            body.info = {};
+            result(null, body);
+            return;
+          } else {
+            db.query(
+              "SELECT t1.*,t2.service_name,t2.service_price,t2.service_duration\n\
+               FROM tbl_service_promotion t1 \n\
+               LEFT JOIN tbl_provider_service t2 ON t1.service_id = t2.service_id\n\
+               WHERE t1.user_id = ? AND t1.type = 1",
+              [req.body.user_id],
+              (err, res5) => {
+                if (err) {
+                  console.log("error", err);
+                } else {
+                  res4[0]["service"] = res5;
+                  body.Status = 1;
+                  body.Message = "flash sale promotion edited Successful";
+                  body.info = res4[0];
+                  result(null, body);
+                  return;
+                }
+              }
+            );
+          }
+        }
+      }
+    );
+  }
+
+  req.body.user_id = req.user.user_id;
+  var serviceId = req.body.service_id;
+  DeleteKeys(req.body, ["service_id"]);
+  db.query(
+    "UPDATE tbl_promotion SET ? WHERE user_id = ?",
+    [req.body, req.body.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (serviceId) {
+          db.query(
+            "DELETE FROM tbl_service_promotion WHERE user_id = ? AND type = 1",
+            [req.body.user_id],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                db.query(
+                  "SELECT promotion_id FROM tbl_promotion WHERE user_id = ? AND type = 1",
+                  [req.body.user_id],
+                  (err, res2) => {
+                    if (err) {
+                      console.log("error", err);
+                    } else {
+                      s_id =
+                        serviceId.length == 1
+                          ? [serviceId]
+                          : serviceId.split(",");
+                      s_id.forEach((e, i) => {
+                        db.query(
+                          "INSERT INTO tbl_service_promotion(promotion_id,type,service_id,user_id)VALUES(?,1,?,?)",
+                          [res2[0].promotion_id, e, req.body.user_id],
+                          (err, res3) => {
+                            if (err) {
+                              console.log("error", err);
+                            } else {
+                              if (s_id.length - 1 == i) {
+                                getdata();
+                              }
+                            }
+                          }
+                        );
+                      });
+                    }
+                  }
+                );
+              }
+            }
+          );
+        } else {
+          getdata();
+        }
+      }
+    }
+  );
+};
+
+exports.delete_promotion = (req, result) => {
+  var body = {};
+  db.query(
+    "DELETE FROM tbl_promotion WHERE promotion_id = ?",
+    [req.body.promotion_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        db.query(
+          "DELETE FROM tbl_service_promotion WHERE promotion_id",
+          [req.body.promotion_id],
+          (err, res1) => {
+            if (err) {
+              console.log("error", err);
+            } else {
+              body.Status = 1;
+              body.Message = "Promotion deleted successful";
+              result(null, body);
+              return;
+            }
+          }
+        );
+      }
+    }
+  );
+};
+
+exports.add_last_minute_discount = (req, result) => {
+  var body = {};
+  var serviceId = req.body.service_id;
+  req.body.user_id = req.user.user_id;
+  req.body.type = 2;
+  DeleteKeys(req.body, ["service_id"]);
+  db.query(
+    "SELECT * FROM tbl_promotion WHERE user_id = ? AND type = 2",
+    [req.body.user_id],
+    (err, resp) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (resp.length <= 0) {
+          db.query(
+            "INSERT INTO tbl_promotion SET ?",
+            [req.body],
+            (err, res) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                s_id =
+                  serviceId.length == 1 ? [serviceId] : serviceId.split(",");
+                s_id.forEach((e, i) => {
+                  db.query(
+                    "INSERT INTO tbl_service_promotion(promotion_id,type,service_id,user_id)VALUES(?,?,?,?)",
+                    [res.insertId, req.body.type, e, req.body.user_id],
+                    (err, res1) => {
+                      if (err) {
+                        console.log("error", err);
+                      } else {
+                        if (s_id.length - 1 == i) {
+                          body.Status = 1;
+                          body.Message =
+                            "Last minute discount Added Successful";
+                          result(null, body);
+                          return;
+                        }
+                      }
+                    }
+                  );
+                });
+              }
+            }
+          );
+        } else {
+          body.Status = 0;
+          body.Message = "You have already added Last minute discount";
+          result(null, body);
+          return;
+        }
+      }
+    }
+  );
+};
+
+exports.edit_last_minute_discount = (req, result) => {
+  var body = {};
+  function getdata() {
+    db.query(
+      "SELECT * FROM tbl_promotion WHERE user_id = ? AND type = 2",
+      [req.body.user_id],
+      (err, res4) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          if (res4.length <= 0) {
+            body.Status = 1;
+            body.Message = "No data found";
+            body.info = {};
+            result(null, body);
+            return;
+          } else {
+            db.query(
+              "SELECT t1.*,t2.service_name,t2.service_price,t2.service_duration\n\
+               FROM tbl_service_promotion t1 \n\
+               LEFT JOIN tbl_provider_service t2 ON t1.service_id = t2.service_id\n\
+               WHERE t1.user_id = ? AND t1.type = 2",
+              [req.body.user_id],
+              (err, res5) => {
+                if (err) {
+                  console.log("error", err);
+                } else {
+                  res4[0]["service"] = res5;
+                  body.Status = 1;
+                  body.Message = "Last minute discount edited Successful";
+                  body.info = res4[0];
+                  result(null, body);
+                  return;
+                }
+              }
+            );
+          }
+        }
+      }
+    );
+  }
+
+  req.body.user_id = req.user.user_id;
+  var serviceId = req.body.service_id;
+  DeleteKeys(req.body, ["service_id"]);
+  db.query(
+    "UPDATE tbl_promotion SET ? WHERE user_id = ?",
+    [req.body, req.body.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (serviceId) {
+          db.query(
+            "DELETE FROM tbl_service_promotion WHERE user_id = ? AND type = 2",
+            [req.body.user_id],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                db.query(
+                  "SELECT promotion_id FROM tbl_promotion WHERE user_id = ? AND type = 2",
+                  [req.body.user_id],
+                  (err, res2) => {
+                    if (err) {
+                      console.log("error", err);
+                    } else {
+                      s_id =
+                        serviceId.length == 1
+                          ? [serviceId]
+                          : serviceId.split(",");
+                      s_id.forEach((e, i) => {
+                        db.query(
+                          "INSERT INTO tbl_service_promotion(promotion_id,type,service_id,user_id)VALUES(?,2,?,?)",
+                          [res2[0].promotion_id, e, req.body.user_id],
+                          (err, res3) => {
+                            if (err) {
+                              console.log("error", err);
+                            } else {
+                              if (s_id.length - 1 == i) {
+                                getdata();
+                              }
+                            }
+                          }
+                        );
+                      });
+                    }
+                  }
+                );
+              }
+            }
+          );
+        } else {
+          getdata();
+        }
+      }
+    }
+  );
+};
+
+exports.get_happy_hour = (req, result) => {
+  var body = {};
+  function getdata() {
+    db.query(
+      "SELECT day,promotion_id,user_id,type,discount,start_time,end_time FROM tbl_promotion WHERE user_id = ? AND type = 3",
+      [req.user.user_id],
+      (err, resp) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          body.Status = 1;
+          body.Message = "Happy hour get successful";
+          body.info = resp;
+          result(null, body);
+          return;
+        }
+      }
+    );
+  }
+
+  db.query(
+    "SELECT * FROM tbl_promotion WHERE user_id = ? AND type = 3",
+    [req.user.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          var happyHour = [
+            {
+              day: "Monday",
+            },
+            {
+              day: "Tuesday",
+            },
+            {
+              day: "Wednesday",
+            },
+            {
+              day: "Thursday",
+            },
+            {
+              day: "Friday",
+            },
+            {
+              day: "Saturday",
+            },
+            {
+              day: "Sunday",
+            },
+          ];
+          happyHour.forEach((e, i) => {
+            db.query(
+              "INSERT INTO tbl_promotion(user_id,type,day) VALUES (?,3,?)",
+              [req.user.user_id, e.day],
+              (err, res1) => {
+                if (err) {
+                  console.log("error", err);
+                } else {
+                  if (happyHour.length - 1 == i) {
+                    getdata();
+                  }
+                }
+              }
+            );
+          });
+        } else {
+          getdata();
+        }
+      }
+    }
+  );
+};
+
+exports.edit_daywise_happy_hour = (req, result) => {
+  var body = {};
+  function getdata() {
+    db.query(
+      "SELECT day,promotion_id,user_id,type,discount,start_time,end_time FROM tbl_promotion WHERE promotion_id = ?",
+      [req.body.promotion_id],
+      (err, res4) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          if (res4.length <= 0) {
+            body.Status = 1;
+            body.Message = "No data found";
+            body.info = {};
+            result(null, body);
+            return;
+          } else {
+            db.query(
+              "SELECT t1.*,t2.service_name,t2.service_price,t2.service_duration\n\
+               FROM tbl_service_promotion t1 \n\
+               LEFT JOIN tbl_provider_service t2 ON t1.service_id = t2.service_id\n\
+               WHERE t1.promotion_id = ?",
+              [req.body.promotion_id],
+              (err, res5) => {
+                if (err) {
+                  console.log("error", err);
+                } else {
+                  res4[0]["service"] = res5;
+                  body.Status = 1;
+                  body.Message = "Happy Hour edited Successful";
+                  body.info = res4[0];
+                  result(null, body);
+                  return;
+                }
+              }
+            );
+          }
+        }
+      }
+    );
+  }
+
+  req.body.user_id = req.user.user_id;
+  var serviceId = req.body.service_id;
+  DeleteKeys(req.body, ["service_id"]);
+  db.query(
+    "UPDATE tbl_promotion SET ? WHERE promotion_id = ?",
+    [req.body, req.body.promotion_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (serviceId) {
+          db.query(
+            "DELETE FROM tbl_service_promotion WHERE promotion_id = ?",
+            [req.body.promotion_id],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                s_id =
+                  serviceId.length == 1 ? [serviceId] : serviceId.split(",");
+                s_id.forEach((e, i) => {
+                  db.query(
+                    "INSERT INTO tbl_service_promotion(promotion_id,type,service_id,user_id)VALUES(?,3,?,?)",
+                    [req.body.promotion_id, e, req.body.user_id],
+                    (err, res3) => {
+                      if (err) {
+                        console.log("error", err);
+                      } else {
+                        if (s_id.length - 1 == i) {
+                          getdata();
+                        }
+                      }
+                    }
+                  );
+                });
+              }
+            }
+          );
+        } else {
+          getdata();
+        }
       }
     }
   );

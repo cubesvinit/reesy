@@ -922,6 +922,10 @@ exports.edit_profile = (req, result) => {
                         body.Message = "User Not Found";
                         return result(null, body);
                       } else {
+                        res1[0]["privacy_policy_url"] =
+                          "https://www.google.com/";
+                        res1[0]["terms_condition_url"] =
+                          "https://www.google.com/";
                         body.Status = 1;
                         body.Message = "User profile edited successfully";
                         body.info = res1[0];
@@ -1191,11 +1195,12 @@ exports.get_main_data = (req, result) => {
   db.query(
     "SELECT t1.user_id,t1.bussiness_name,t1.street_address1,\n\
   t1.city,t1.zipcode,t1.bussiness_lat,t1.bussiness_long,\n\
-  t1.membership_protection,t1.agreement_protection,t3.is_closed,\n\
-  ROUND(IFNULL(AVG(t4.overall_star),0),1)as star_count,\n\
+  t1.membership_protection,t1.agreement_protection,IFNULL(t3.is_closed,0)as is_closed,\n\
+  ROUND(IFNULL((SELECT AVG(t4.overall_star) FROM tbl_review t4 WHERE t1.user_id = t4.review_to),0),1)as star_count,\n\
   COUNT(t5.category_id)as is_category,\n\
   COUNT(t6.benefit_id)as is_benefit,\n\
   COUNT(t7.gender_id)as is_gender,\n\
+  IF(COUNT(t8.like_id) != 0,1,0)as is_like_by_me,\n\
  (SELECT (t2.image) FROM tbl_workplace_image t2 WHERE t1.user_id = t2.user_id ORDER BY t2.image_id ASC LIMIT 1)as work_image,\n\
  format(111.111 *\n\
   DEGREES(ACOS(LEAST(1.0, COS(RADIANS(t1.bussiness_lat))\n\
@@ -1207,7 +1212,6 @@ exports.get_main_data = (req, result) => {
  LEFT JOIN tbl_bussiness_hour t3 ON t3.day = DAYNAME('" +
       curernt_date +
       "') AND t3.user_id = t1.user_id\n\
- LEFT JOIN tbl_review t4 ON t4.review_to = t1.user_id\n\
  LEFT JOIN tbl_provider_service t5 ON t5.user_id = t1.user_id AND t5.category_id = " +
       req.body.category_id +
       "\n\
@@ -1217,9 +1221,10 @@ exports.get_main_data = (req, result) => {
  LEFT JOIN tbl_provider_service_gender t7 ON t7.user_id = t1.user_id AND t7.gender_id IN ('" +
       req.body.gender_id +
       "')\n\
+LEFT JOIN tbl_like_saloon t8 ON t8.like_to = t1.user_id AND t8.like_by = "+req.body.user_id+" \n\
   WHERE t1.user_role = 'provider' AND t1.is_account_setup = 1 " +
       search +
-      " HAVING new_distance <= 50" +
+      " HAVING new_distance <= 5000000" +
       WHERE +
       " ORDER BY t1.user_id " +
       ORDER +
@@ -1243,11 +1248,12 @@ exports.get_main_data = (req, result) => {
           db.query(
             "SELECT t1.user_id,t1.bussiness_name,t1.street_address1,\n\
             t1.city,t1.zipcode,t1.bussiness_lat,t1.bussiness_long,\n\
-            t1.membership_protection,t1.agreement_protection,t3.is_closed,\n\
-            ROUND(IFNULL(AVG(t4.overall_star),0),1)as star_count,\n\
+            t1.membership_protection,t1.agreement_protection,IFNULL(t3.is_closed,0)as is_closed,\n\
+            ROUND(IFNULL((SELECT AVG(t4.overall_star) FROM tbl_review t4 WHERE t1.user_id = t4.review_to),0),1)as star_count,\n\
             COUNT(t5.category_id)as is_category,\n\
             COUNT(t6.benefit_id)as is_benefit,\n\
             COUNT(t7.gender_id)as is_gender,\n\
+            IF(COUNT(t8.like_id) != 0,1,0)as is_like_by_me,\n\
            (SELECT (t2.image) FROM tbl_workplace_image t2 WHERE t1.user_id = t2.user_id ORDER BY t2.image_id ASC LIMIT 1)as work_image,\n\
            format(111.111 *\n\
             DEGREES(ACOS(LEAST(1.0, COS(RADIANS(t1.bussiness_lat))\n\
@@ -1259,7 +1265,6 @@ exports.get_main_data = (req, result) => {
            LEFT JOIN tbl_bussiness_hour t3 ON t3.day = DAYNAME('" +
               curernt_date +
               "') AND t3.user_id = t1.user_id\n\
-           LEFT JOIN tbl_review t4 ON t4.review_to = t1.user_id\n\
            LEFT JOIN tbl_provider_service t5 ON t5.user_id = t1.user_id AND t5.category_id = " +
               req.body.category_id +
               "\n\
@@ -1269,9 +1274,10 @@ exports.get_main_data = (req, result) => {
            LEFT JOIN tbl_provider_service_gender t7 ON t7.user_id = t1.user_id AND t7.gender_id IN ('" +
               req.body.gender_id +
               "')\n\
+              LEFT JOIN tbl_like_saloon t8 ON t8.like_to = t1.user_id AND t8.like_by = "+req.body.user_id+" \n\
             WHERE t1.user_role = 'provider' AND t1.is_account_setup = 1 " +
               search +
-              " HAVING new_distance <= 50 " +
+              " HAVING new_distance <= 5000 " +
               WHERE +
               " ORDER BY t1.user_id " +
               ORDER,
@@ -1369,7 +1375,7 @@ exports.recently_viewed_saloon_data = (req, result) => {
       req.body.latitude,
       req.body.longitude,
       req.body.latitude,
-      req.user.user_id,
+      req.body.user_id,
     ],
     (err, res) => {
       if (err) {
@@ -1422,7 +1428,7 @@ exports.recently_viewed_saloon_data = (req, result) => {
               req.body.latitude,
               req.body.longitude,
               req.body.latitude,
-              req.user.user_id,
+              req.body.user_id,
             ],
             (err, res1) => {
               if (err) {

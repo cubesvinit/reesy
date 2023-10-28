@@ -143,24 +143,24 @@ router.post(
 router.post(
   "/get_main_data",
   [
+    check("user_id").not().isEmpty().trim().escape(),
     check("latitude").not().isEmpty().trim().escape(),
     check("longitude").not().isEmpty().trim().escape(),
     check("category_id").not().isEmpty().trim().escape(),
     check("page_no").not().isEmpty().trim().escape(),
   ],
-  [authenticate],
   usersController.get_main_data
 );
 
 router.post(
   "/recently_viewed_saloon_data",
   [
+    check("user_id").not().isEmpty().trim().escape(),
     check("latitude").not().isEmpty().trim().escape(),
     check("longitude").not().isEmpty().trim().escape(),
     check("category_id").not().isEmpty().trim().escape(),
     check("page_no").not().isEmpty().trim().escape(),
   ],
-  [authenticate],
   usersController.recently_viewed_saloon_data
 );
 
