@@ -618,3 +618,45 @@ exports.edit_daywise_happy_hour = (req, res) => {
     }
   });
 };
+
+exports.add_client = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.add_client(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.list_client = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.list_client(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.list_upcoming_birthday_client = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.list_upcoming_birthday_client(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};

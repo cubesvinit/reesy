@@ -200,7 +200,6 @@ exports.account_setup = (req, result) => {
                         } else {
                           if (req.files["image"].length - 1 == index) {
                             var obj = JSON.parse(b_hour);
-                            console.log("obj", obj);
                             obj.forEach((e, i) => {
                               var b_data = {
                                 user_id: req.user.user_id,
@@ -251,7 +250,6 @@ exports.account_setup = (req, result) => {
                                         obj.length - 1 == i &&
                                         breakdata.length - 1 == i1
                                       ) {
-                                        console.log("if...");
                                         var obj1 = JSON.parse(s_data);
                                         obj1.forEach((e2, i2) => {
                                           var service_data = {
@@ -1976,6 +1974,124 @@ exports.edit_daywise_happy_hour = (req, result) => {
           );
         } else {
           getdata();
+        }
+      }
+    }
+  );
+};
+
+exports.add_client = (req, result) => {
+  var body = {};
+  req.body.user_id = req.user.user_id;
+  db.query("INSERT INTO tbl_client SET ?", [req.body], (err, res) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      body.Status = 1;
+      body.Message = "Client added successfully";
+      result(null, body);
+      return;
+    }
+  });
+};
+
+exports.list_client = (req, result) => {
+  var body = {};
+  const limit = 10;
+  const page_no = req.body.page_no;
+  const offset = (page_no - 1) * limit;
+  var WHERE = "";
+  if (req.body.search_text) {
+    WHERE =
+      " WHERE (t1.first_name LIKE '%" +
+      req.body.search_text +
+      "%' OR t1.last_name LIKE '%" +
+      req.body.search_text +
+      "%')";
+  }
+  db.query(
+    "SELECT t1.*,\n\
+    (SELECT COUNT(*) FROM tbl_client t1 " +
+      WHERE +
+      ")as total_data\n\
+     FROM tbl_client t1 " +
+      WHERE +
+      " ORDER BY t1.first_name ASC LIMIT " +
+      limit +
+      " OFFSET " +
+      offset,
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No data found";
+          body.total_page = 0;
+          body.info = res;
+          result(null, body);
+          return;
+        } else {
+          body.Status = 1;
+          body.Message = "Client get successful";
+          body.total_page = Math.ceil(res[0].total_data / limit);
+          body.info = res;
+          result(null, body);
+          return;
+        }
+      }
+    }
+  );
+};
+
+exports.list_upcoming_birthday_client = (req, result) => {
+  var body = {};
+  const limit = 10;
+  const page_no = req.body.page_no;
+  const offset = (page_no - 1) * limit;
+  var WHERE = "";
+  if (req.body.search_text) {
+    WHERE =
+      " AND (first_name LIKE '%" +
+      req.body.search_text +
+      "%' OR last_name LIKE '%" +
+      req.body.search_text +
+      "%')";
+  }
+  db.query(
+    "SELECT * FROM tbl_client WHERE DATE_FORMAT(date_of_birth,'%m-%d') BETWEEN ? AND '12-31' "+WHERE+" ORDER BY date_of_birth ASC LIMIT " +
+      limit +
+      " OFFSET " +
+      offset,
+    [moment().format("MM-DD")],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No data found";
+          body.total_page = 0;
+          body.info = res;
+          result(null, body);
+          return;
+        } else {
+          db.query(
+            "SELECT * FROM tbl_client WHERE DATE_FORMAT(date_of_birth,'%m-%d') BETWEEN ? AND '12-31' "+WHERE+" ORDER BY date_of_birth ASC",
+            [moment().format("MM-DD")],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                body.Status = 1;
+                body.Message = "Upcoming birthday get successful";
+                body.total_page = Math.ceil(res1.length / limit);
+                body.info = res;
+                result(null, body);
+                return;
+              }
+            }
+          );
         }
       }
     }

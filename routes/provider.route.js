@@ -304,4 +304,32 @@ router.post(
   providerController.edit_daywise_happy_hour
 );
 
+router.post(
+  "/add_client",
+  [
+    check("first_name").not().isEmpty().trim().escape(),
+    check("last_name").not().isEmpty().trim().escape(),
+    check("email_id").not().isEmpty().trim().escape(),
+    check("country_code").not().isEmpty().trim().escape(),
+    check("iso_code").not().isEmpty().trim().escape(),
+    check("phone_number").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.add_client
+);
+
+router.post(
+  "/list_client",
+  [check("page_no").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.list_client
+);
+
+router.post(
+  "/list_upcoming_birthday_client",
+  [check("page_no").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.list_upcoming_birthday_client
+);
+
 module.exports = router;
