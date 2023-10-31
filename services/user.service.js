@@ -1242,6 +1242,11 @@ exports.get_main_data = (req, result) => {
           result(null, body);
           return;
         } else {
+          var resp = [];
+          for (var i = 1; i < res.length; i++) {
+            DeleteKeys(res[i], ["is_category", "is_benefit", "is_gender"]);
+            resp.push(res[i]);
+          }
           db.query(
             "SELECT t1.user_id,t1.bussiness_name,t1.street_address1,\n\
             t1.city,t1.zipcode,t1.bussiness_lat,t1.bussiness_long,\n\
@@ -1284,7 +1289,7 @@ exports.get_main_data = (req, result) => {
                 body.Status = 1;
                 body.Message = "Main data get successful";
                 body.total_page = Math.ceil(res1.length / limit);
-                body.info = res;
+                body.info = resp;
                 result(null, body);
                 return;
               }
@@ -1449,6 +1454,42 @@ exports.like_unlike_saloon = (req, result) => {
   var data = {};
   data.like_by = req.user.user_id;
   data.like_to = req.body.user_id;
+  var curernt_date = moment().format("YYYY-MM-DD");
+  function getSalooData(type) {
+    var word = type == 1 ? " Liked " : " Disliked ";
+    db.query(
+      "SELECT t1.user_id,t1.bussiness_name,t1.street_address1,\n\
+  t1.city,t1.zipcode,t1.bussiness_lat,t1.bussiness_long,\n\
+  t1.membership_protection,t1.agreement_protection,IFNULL(t3.is_closed,0)as is_closed,\n\
+  ROUND(IFNULL((SELECT AVG(t4.overall_star) FROM tbl_review t4 WHERE t1.user_id = t4.review_to),0),1)as star_count,\n\
+  (SELECT IF(COUNT(t5.like_id) != 0,1,0) FROM tbl_like_saloon t5 WHERE t5.like_to = t1.user_id AND t5.like_by = " +
+        data.like_by +
+        ")as is_like_by_me,\n\
+ (SELECT (t2.image) FROM tbl_workplace_image t2 WHERE t1.user_id = t2.user_id ORDER BY t2.image_id ASC LIMIT 1)as work_image,\n\
+ format(111.111 *\n\
+  DEGREES(ACOS(LEAST(1.0, COS(RADIANS(t1.bussiness_lat))\n\
+       * COS(RADIANS(?))\n\
+       * COS(RADIANS(t1.bussiness_long - ?))\n\
+       + SIN(RADIANS(t1.bussiness_lat))\n\
+       * SIN(RADIANS(?))))), 2) AS new_distance\n\
+ FROM tbl_users t1\n\
+ LEFT JOIN tbl_bussiness_hour t3 ON t3.day = DAYNAME('" +
+        curernt_date +
+        "') AND t3.user_id = t1.user_id\n\
+  WHERE t1.user_id = ?",
+      [data.like_to],
+      (err, resp) => {
+        if (err) {
+          console.log("error", err);
+        }else{
+          body.Status = 1;
+          body.Message = "Saloon "+word+" successful";
+          result(null, body);
+          return;
+        }
+      }
+    );
+  }
   db.query(
     "SELECT like_id FROM tbl_like_saloon WHERE like_by = ? AND like_to = ?",
     [data.like_by, data.like_to],
@@ -1462,10 +1503,7 @@ exports.like_unlike_saloon = (req, result) => {
             if (err) {
               console.log("error", err);
             } else {
-              body.Status = 1;
-              body.Message = "Saloon Liked successful";
-              result(null, body);
-              return;
+              getSalooData(1);
             }
           });
         } else {
@@ -1476,10 +1514,7 @@ exports.like_unlike_saloon = (req, result) => {
               if (err) {
                 console.log("error", err);
               } else {
-                body.Status = 1;
-                body.Message = "Saloon Disliked successful";
-                result(null, body);
-                return;
+                getSalooData(2);
               }
             }
           );

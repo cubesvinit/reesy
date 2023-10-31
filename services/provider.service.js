@@ -2059,7 +2059,9 @@ exports.list_upcoming_birthday_client = (req, result) => {
       "%')";
   }
   db.query(
-    "SELECT * FROM tbl_client WHERE DATE_FORMAT(date_of_birth,'%m-%d') BETWEEN ? AND '12-31' "+WHERE+" ORDER BY date_of_birth ASC LIMIT " +
+    "SELECT * FROM tbl_client WHERE DATE_FORMAT(date_of_birth,'%m-%d') BETWEEN ? AND '12-31' " +
+      WHERE +
+      " ORDER BY date_of_birth ASC LIMIT " +
       limit +
       " OFFSET " +
       offset,
@@ -2077,7 +2079,9 @@ exports.list_upcoming_birthday_client = (req, result) => {
           return;
         } else {
           db.query(
-            "SELECT * FROM tbl_client WHERE DATE_FORMAT(date_of_birth,'%m-%d') BETWEEN ? AND '12-31' "+WHERE+" ORDER BY date_of_birth ASC",
+            "SELECT * FROM tbl_client WHERE DATE_FORMAT(date_of_birth,'%m-%d') BETWEEN ? AND '12-31' " +
+              WHERE +
+              " ORDER BY date_of_birth ASC",
             [moment().format("MM-DD")],
             (err, res1) => {
               if (err) {
@@ -2096,4 +2100,101 @@ exports.list_upcoming_birthday_client = (req, result) => {
       }
     }
   );
+};
+
+exports.edit_provider_benefit = (req, result) => {
+  var body = {};
+   function getbenefit() {
+    db.query(
+      "SELECT t1.*,\n\
+    (SELECT COUNT(*) FROM tbl_provider_service_gender t2 WHERE t1.gender_id = t2.gender_id AND t2.user_id = ?)as is_select\n\
+     FROM tbl_service_gender t1",
+      [req.user.user_id],
+      (err, resp) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          db.query(
+            "SELECT t1.*,\n\
+            (SELECT COUNT(*) FROM tbl_provider_service_benefit t2 WHERE t1.benefit_id = t2.benefit_id AND t2.user_id = ?)as is_select\n\
+             FROM tbl_benefit t1",
+            [req.user.user_id],
+            (err, resp1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                body.Status = 1;
+                body.Message = "Benefit edited successful";
+                body.info = {
+                  gender_data: resp,
+                  benefit_data: resp1,
+                };
+                result(null, body);
+                return;
+              }
+            }
+          );
+        }
+      }
+    );
+  }
+
+  if (req.body.gender_id) {
+    db.query(
+      "DELETE FROM tbl_provider_service_gender WHERE user_id = ?",
+      [req.user.user_id],
+      (err, res) => {
+        if (err) {
+          console.log("error", err);
+          result(err, null);
+          return;
+        } else {
+          var genderId =
+            req.body.gender_id.length == 1
+              ? [req.body.gender_id]
+              : req.body.gender_id.split(",");
+              genderId.forEach((e, i) => {
+            db.query(
+              "INSERT INTO tbl_provider_service_gender(user_id,gender_id)VALUES(?,?)",
+              [req.user.user_id, e],
+              (err, res1) => {
+                if (err) {
+                  console.log("error", err);
+                } 
+              }
+            );
+          });
+        }
+      }
+    );
+  } 
+
+  if (req.body.benefit_id) {
+    db.query(
+      "DELETE FROM tbl_provider_service_benefit WHERE user_id = ?",
+      [req.user.user_id],
+      (err, res) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          var benefitId =
+            req.body.benefit_id.length == 1
+              ? [req.body.benefit_id]
+              : req.body.benefit_id.split(",");
+              benefitId.forEach((e, i) => {
+            db.query(
+              "INSERT INTO tbl_provider_service_benefit(user_id,benefit_id)VALUES(?,?)",
+              [req.user.user_id, e],
+              (err, res1) => {
+                if (err) {
+                  console.log("error", err);
+                } 
+              }
+            );
+          });
+        }
+      }
+    );
+  } 
+  getbenefit();
 };

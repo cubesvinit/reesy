@@ -660,3 +660,17 @@ exports.list_upcoming_birthday_client = (req, res) => {
     }
   });
 };
+
+exports.edit_provider_benefit = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.edit_provider_benefit(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};

@@ -78,7 +78,7 @@ router.post(
 
 router.post(
   "/add_workplace_image",
-  [check("image").not().isEmpty().trim().escape()],
+  upload.fields([{ name: "image", maxCount: 10 }]),
   [authenticate],
   providerController.add_workplace_image
 );
@@ -156,7 +156,6 @@ router.post(
 
 router.post(
   "/edit_provider_amenities",
-  [check("amenity_id").not().isEmpty().trim().escape()],
   [authenticate],
   providerController.edit_provider_amenities
 );
@@ -331,5 +330,12 @@ router.post(
   [authenticate],
   providerController.list_upcoming_birthday_client
 );
+
+router.post(
+  "/edit_provider_benefit",
+  [authenticate],
+  providerController.edit_provider_benefit
+);
+
 
 module.exports = router;
