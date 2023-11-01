@@ -604,6 +604,7 @@ exports.login_by_thirdparty = (req, result) => {
             signupdata(user_data, token_data);
           }
         } else {
+          console.log("data",data);
           if (data[0].is_block == 1) {
             body.Status = 0;
             body.Message =
@@ -632,7 +633,7 @@ exports.login_by_thirdparty = (req, result) => {
             return;
           } else if (
             data[0].email_id == req.body.email_id &&
-            data[0].user_role != req.body.user_role
+              data[0].user_role != req.body.user_role
           ) {
             body.Status = 0;
             body.Message = "An account already exists with your email_id";
@@ -1481,9 +1482,9 @@ exports.like_unlike_saloon = (req, result) => {
       (err, resp) => {
         if (err) {
           console.log("error", err);
-        }else{
+        } else {
           body.Status = 1;
-          body.Message = "Saloon "+word+" successful";
+          body.Message = "Saloon " + word + " successful";
           result(null, body);
           return;
         }

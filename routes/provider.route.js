@@ -312,6 +312,7 @@ router.post(
     check("country_code").not().isEmpty().trim().escape(),
     check("iso_code").not().isEmpty().trim().escape(),
     check("phone_number").not().isEmpty().trim().escape(),
+    check("date_of_birth").not().isEmpty().trim().escape(),
   ],
   [authenticate],
   providerController.add_client
@@ -337,5 +338,52 @@ router.post(
   providerController.edit_provider_benefit
 );
 
+router.post(
+  "/create_checkout",
+  [
+    check("client_id").not().isEmpty().trim().escape(),
+    check("amount").not().isEmpty().trim().escape(),
+    check("service_id").not().isEmpty().trim().escape(),
+    check("discount").not().isEmpty().trim().escape(),
+    check("total_amount").not().isEmpty().trim().escape(),
+    check("payment_method").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.create_checkout
+);
+
+router.post(
+  "/get_staff_member",
+  [check("user_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.get_staff_member
+);
+
+router.post(
+  "/get_opening_calender",
+  [check("calender_date").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.get_opening_calender
+);
+
+router.post(
+  "/add_workshift",
+  [
+    check("calender_date").not().isEmpty().trim().escape(),
+    check("member_id").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.add_workshift
+);
+
+router.post(
+  "/get_time_slot",
+  [
+    check("member_id").not().isEmpty().trim().escape(),
+    check("booking_date").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.get_time_slot
+);
 
 module.exports = router;

@@ -1212,31 +1212,52 @@ exports.delete_time_reservation = (req, result) => {
 
 exports.add_message_blast = (req, result) => {
   var body = {};
-  if (req.files != undefined && req.files.image) {
-    var ext = req.files.image[0].originalname.split(".").pop();
-    var ImageUrl_media = req.files.image[0].filename;
-    var ImageUrl_with__ext = req.files.image[0].filename + "." + ext;
-    fs.renameSync(
-      "uploads/images/" + ImageUrl_media,
-      "uploads/images/" + ImageUrl_with__ext
-    );
-    req.body.image = "uploads/images/" + ImageUrl_with__ext;
-  }
-  req.body.user_id = req.user.user_id;
-  req.body.regular_message_text = hee.decode(req.body.regular_message_text);
-  req.body.push_message_text = hee.decode(req.body.push_message_text);
-  db.query("INSERT INTO tbl_message_blast SET ?", [req.body], (err, res) => {
-    if (err) {
-      console.log("error", err);
-      result(err, null);
-      return;
-    } else {
-      body.Status = 1;
-      body.Message = "Blast message added Successful";
-      result(null, body);
-      return;
+  db.query(
+    "SELECT * FROM tbl_message_blast WHERE user_id = ?",
+    [req.user.user_id],
+    (err, resp) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (resp.length <= 0) {
+          if (req.files != undefined && req.files.image) {
+            var ext = req.files.image[0].originalname.split(".").pop();
+            var ImageUrl_media = req.files.image[0].filename;
+            var ImageUrl_with__ext = req.files.image[0].filename + "." + ext;
+            fs.renameSync(
+              "uploads/images/" + ImageUrl_media,
+              "uploads/images/" + ImageUrl_with__ext
+            );
+            req.body.image = "uploads/images/" + ImageUrl_with__ext;
+          }
+          req.body.user_id = req.user.user_id;
+          req.body.regular_message_text = hee.decode(
+            req.body.regular_message_text
+          );
+          req.body.push_message_text = hee.decode(req.body.push_message_text);
+          db.query(
+            "INSERT INTO tbl_message_blast SET ?",
+            [req.body],
+            (err, res) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                body.Status = 1;
+                body.Message = "Blast message added Successful";
+                result(null, body);
+                return;
+              }
+            }
+          );
+        } else {
+          body.Status = 0;
+          body.Message = "You have already added a Blast message";
+          result(null, body);
+          return;
+        }
+      }
     }
-  });
+  );
 };
 
 exports.edit_message_blast = (req, result) => {
@@ -2102,42 +2123,8 @@ exports.list_upcoming_birthday_client = (req, result) => {
   );
 };
 
-exports.edit_provider_benefit = (req, result) => {
+exports.edit_provider_benefit = async (req, result) => {
   var body = {};
-   function getbenefit() {
-    db.query(
-      "SELECT t1.*,\n\
-    (SELECT COUNT(*) FROM tbl_provider_service_gender t2 WHERE t1.gender_id = t2.gender_id AND t2.user_id = ?)as is_select\n\
-     FROM tbl_service_gender t1",
-      [req.user.user_id],
-      (err, resp) => {
-        if (err) {
-          console.log("error", err);
-        } else {
-          db.query(
-            "SELECT t1.*,\n\
-            (SELECT COUNT(*) FROM tbl_provider_service_benefit t2 WHERE t1.benefit_id = t2.benefit_id AND t2.user_id = ?)as is_select\n\
-             FROM tbl_benefit t1",
-            [req.user.user_id],
-            (err, resp1) => {
-              if (err) {
-                console.log("error", err);
-              } else {
-                body.Status = 1;
-                body.Message = "Benefit edited successful";
-                body.info = {
-                  gender_data: resp,
-                  benefit_data: resp1,
-                };
-                result(null, body);
-                return;
-              }
-            }
-          );
-        }
-      }
-    );
-  }
 
   if (req.body.gender_id) {
     db.query(
@@ -2153,23 +2140,25 @@ exports.edit_provider_benefit = (req, result) => {
             req.body.gender_id.length == 1
               ? [req.body.gender_id]
               : req.body.gender_id.split(",");
-              genderId.forEach((e, i) => {
-            db.query(
+          console.log("genderId", genderId);
+          genderId.forEach(async (e, i) => {
+            await db.query(
               "INSERT INTO tbl_provider_service_gender(user_id,gender_id)VALUES(?,?)",
               [req.user.user_id, e],
               (err, res1) => {
                 if (err) {
                   console.log("error", err);
-                } 
+                }
               }
             );
           });
         }
       }
     );
-  } 
+  }
 
   if (req.body.benefit_id) {
+    console.log("benefit");
     db.query(
       "DELETE FROM tbl_provider_service_benefit WHERE user_id = ?",
       [req.user.user_id],
@@ -2181,20 +2170,223 @@ exports.edit_provider_benefit = (req, result) => {
             req.body.benefit_id.length == 1
               ? [req.body.benefit_id]
               : req.body.benefit_id.split(",");
-              benefitId.forEach((e, i) => {
+          console.log("benefitId", benefitId);
+          benefitId.forEach((e, i) => {
             db.query(
               "INSERT INTO tbl_provider_service_benefit(user_id,benefit_id)VALUES(?,?)",
               [req.user.user_id, e],
               (err, res1) => {
                 if (err) {
                   console.log("error", err);
-                } 
+                }
               }
             );
           });
         }
       }
     );
-  } 
-  getbenefit();
+  }
+  await db.query("SELECT user_id from tbl_users", (err, res) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      db.query(
+        "SELECT t1.*,\n\
+        (SELECT COUNT(*) FROM tbl_provider_service_gender t2 WHERE t1.gender_id = t2.gender_id AND t2.user_id = ?)as is_select\n\
+         FROM tbl_service_gender t1",
+        [req.user.user_id],
+        (err, resp) => {
+          if (err) {
+            console.log("error", err);
+          } else {
+            db.query(
+              "SELECT t1.*,\n\
+                (SELECT COUNT(*) FROM tbl_provider_service_benefit t2 WHERE t1.benefit_id = t2.benefit_id AND t2.user_id = ?)as is_select\n\
+                 FROM tbl_benefit t1",
+              [req.user.user_id],
+              (err, resp1) => {
+                if (err) {
+                  console.log("error", err);
+                } else {
+                  body.Status = 1;
+                  body.Message = "Benefit edited successful";
+                  body.info = {
+                    gender_data: resp,
+                    benefit_data: resp1,
+                  };
+                  result(null, body);
+                  return;
+                }
+              }
+            );
+          }
+        }
+      );
+    }
+  });
+};
+
+exports.create_checkout = (req, result) => {
+  var body = {};
+  req.body.booking_by = req.user.user_id;
+  req.body.booking_to = req.body.client_id;
+  req.body.booking_type = 1;
+  var serviceId = req.body.service_id;
+  DeleteKeys(req.body, ["service_id", "client_id"]);
+  db.query("INSERT INTO tbl_booking SET ?", [req.body], (err, res) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      var sid = serviceId.length == 1 ? [serviceId] : serviceId.split(",");
+      sid.forEach((e, i) => {
+        db.query(
+          "INSERT INTO tbl_service_booking(booking_id,user_id,service_id)VALUES(?,?,?)",
+          [res.insertId, req.body.booking_to, e],
+          (err, res1) => {
+            if (err) {
+              console.log("error", err);
+            } else {
+              if (sid.length - 1 == i) {
+                body.Status = 1;
+                body.Message = "Checkout created successfully";
+                result(null, body);
+                return;
+              }
+            }
+          }
+        );
+      });
+    }
+  });
+};
+
+exports.get_staff_member = (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT t1.user_id,t1.added_by,t1.user_role,t1.first_name,t1.last_name,\n\
+  t1.profile_pic,t1.is_available\n\
+FROM tbl_users t1 WHERE t1.added_by = ?",
+    [req.body.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        body.Status = 1;
+        body.Message = "Member get successful";
+        body.info = res;
+        result(null, body);
+        return;
+      }
+    }
+  );
+};
+
+exports.get_opening_calender = (req, result) => {
+  var body = {};
+  db.query(
+    `SELECT * FROM tbl_bussiness_hour WHERE user_id = ? AND day = DAYNAME(${req.body.calender_date})`,
+    [req.user.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        db.query(
+          "SELECT * FROM tbl_bussiness_hour_break WHERE hour_id = ?",
+          [res[0].hour_id],
+          (err, res1) => {
+            if (err) {
+              console.log("error", err);
+            } else {
+              res[0]["break"] = res1;
+              body.Status = 1;
+              body.Message = "Opening calender get successful";
+              body.info = res[0];
+              result(null, body);
+              return;
+            }
+          }
+        );
+      }
+    }
+  );
+};
+
+exports.add_workshift = (req, result) => {
+  var body = {};
+  var obj = JSON.parse(req.body.workshift_data);
+  var workshift = {
+    user_id: req.user.user_id,
+    member_id: req.body.member_id,
+    shift_date: req.body.calender_date,
+    start_time: obj.start_time,
+    end_time: obj.end_time,
+  };
+  db.query(
+    "INSERT INTO tbl_member_workshift SET ?",
+    [workshift],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        var breakdata = e.break.length <= 0 ? [0] : e.break;
+        breakdata.forEach((e1, i1) => {
+          if (e1 != 0) {
+            var break_data = {
+              user_id: req.user.user_id,
+              workshift: res.insertId,
+              break_start: e1.break_start,
+              break_end: e1.break_end,
+            };
+            db.query(
+              "INSERT INTO tbl_member_workshift_break SET ?",
+              [break_data],
+              (err, res1) => {
+                if (err) {
+                  console.log("error", err);
+                }
+              }
+            );
+          }
+          if (breakdata.length - 1 == i1) {
+            var timeoffdata = e.timeoff.length <= 0 ? [0] : e.timeoff;
+            timeoffdata.forEach((e2, i2) => {
+              if (e2 != 0) {
+                var timeoff_data = {
+                  user_id: req.user.user_id,
+                  member_id: req.body.member_id,
+                  timeoff_date: e2.timeoff_date,
+                  reason_id: e2.reason_id,
+                  type: e2.type,
+                  start_date: e2.start_date,
+                  end_date: e2.end_date,
+                  start_time: e2.start_time,
+                  end_time: e2.end_time,
+                };
+                db.query(
+                  "INSERT INTO tbl_workshift_timeoff SET ?",
+                  [timeoff_data],
+                  (err, res2) => {
+                    if (err) {
+                      console.log("error", err);
+                    }
+                  }
+                );
+              }
+              if (timeoffdata.length - 1 == i2) {
+                body.Status = 1;
+                body.Message = "Workshift added successfully";
+                result(null, body);
+                return;
+              }
+            });
+          }
+        });
+      }
+    }
+  );
+};
+
+exports.get_time_slot = (req, result) => {
+  var body = {};
+  db.query("");
 };
