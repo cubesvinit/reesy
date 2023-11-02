@@ -216,6 +216,8 @@ router.post(
 
 router.post("/list_promote_plan", providerController.list_promote_plan);
 
+router.post("/list_promotion", providerController.list_promotion);
+
 router.post(
   "/promote_saloon",
   [
@@ -333,6 +335,13 @@ router.post(
 );
 
 router.post(
+  "/get_birthday_client_profile",
+  [check("page_no").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.list_upcoming_birthday_client
+);
+
+router.post(
   "/edit_provider_benefit",
   [authenticate],
   providerController.edit_provider_benefit
@@ -374,6 +383,23 @@ router.post(
   ],
   [authenticate],
   providerController.add_workshift
+);
+
+router.post(
+  "/edit_workshift",
+  [
+    check("calender_date").not().isEmpty().trim().escape(),
+    check("member_id").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.edit_workshift
+);
+
+router.post(
+  "/list_all_member_workshift",
+  [check("calender_date").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.list_all_member_workshift
 );
 
 router.post(

@@ -515,14 +515,16 @@ exports.list_service = (req, result) => {
   var offset = limit * (page_no - 1);
   var WHERE = "";
   if (req.body.search_text) {
-    WHERE = " t1.service_name LIKE '%" + req.body.search_text + "%'";
+    WHERE = " AND t1.service_name LIKE '%" + req.body.search_text + "%'";
   }
   db.query(
-    "SELECT t1.*,\n\
+    "SELECT t1.*,t2.color_code,\n\
     (SELECT COUNT(*) FROM tbl_provider_service t1 WHERE t1.user_id = ? " +
       WHERE +
       ")as total_data\n\
-     FROM tbl_provider_service t1 WHERE t1.user_id = ? " +
+     FROM tbl_provider_service t1\n\
+     JOIN tbl_service_color t2 ON t1.color_id = t2.color_id\n\
+      WHERE t1.user_id = ? " +
       WHERE +
       " ORDER BY t1.service_id DESC LIMIT " +
       limit +
@@ -567,7 +569,11 @@ exports.edit_service = (req, result) => {
         return;
       } else {
         db.query(
-          "SELECT * FROM tbl_provider_service WHERE service_id = ?",
+          "SELECT t1.*,t2.category_name,t3.color_code\n\
+           FROM tbl_provider_service t1\n\
+           JOIN tbl_category t2 ON t1.category_id = t2.category_id\n\
+           JOIN tbl_service_color t3 ON t1.color_id = t3.color_id\n\
+            WHERE t1.service_id = ?",
           [req.body.service_id],
           (err, res1) => {
             if (err) {
@@ -584,7 +590,7 @@ exports.edit_service = (req, result) => {
               } else {
                 body.Status = 1;
                 body.Message = "Service get successful";
-                body.info = res[0];
+                body.info = res1[0];
                 result(null, body);
                 return;
               }
@@ -1294,6 +1300,7 @@ exports.edit_message_blast = (req, result) => {
               if (res1.length <= 0) {
                 body.Status = 1;
                 body.Message = "No data found";
+                body.is_added = 0;
                 body.info = {};
                 result(null, body);
                 return;
@@ -1324,6 +1331,33 @@ exports.list_promote_plan = (req, result) => {
       } else {
         body.Status = 1;
         body.Message = "Promote plan listed Successful";
+        body.info = res;
+        result(null, body);
+        return;
+      }
+    }
+  );
+};
+
+exports.list_promotion = (req, result) => {
+  var body = {};
+  var currentDate = moment().format("YYYY-MM-DD");
+  db.query(
+    "SELECT t1.type_id,t1.promotion_type,t1.promotion_description,\n\
+  t3.promotion_id,t3.user_id,t3.discount,t3.time_period,t3.booking_window_hour,t3.start_time,t3.end_time,t3.day,t3.created_at,\n\
+  (SELECT COUNT(*) FROM tbl_booking t2 WHERE t1.type_id = t2.type_id AND t2.booking_status = 2 AND t2.booking_to = ?)as total_appoinment,\n\
+  IFNULL((SELECT SUM(t2.total_amount) FROM tbl_booking t2 WHERE t1.type_id = t2.type_id AND t2.booking_status = 2 AND t2.booking_to = ?),0)as total_profit\n\
+  FROM tbl_promotion_type t1\n\
+  LEFT JOIN tbl_promotion t3 ON t3.user_id = ? AND IF(t1.type_id = t3.type_id AND t3.type_id = 3,t3.day = DAYNAME('" +
+      currentDate +
+      "'),t1.type_id = t3.type_id) GROUP BY t1.type_id",
+    [req.user.user_id, req.user.user_id, req.user.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        body.Status = 1;
+        body.Message = "Promotions Listed successfully.";
         body.info = res;
         result(null, body);
         return;
@@ -1461,6 +1495,7 @@ exports.edit_announcement = (req, result) => {
               if (res1.length <= 0) {
                 body.Status = 1;
                 body.Message = "No data found";
+                body.is_added = 0;
                 body.info = {};
                 result(null, body);
                 return;
@@ -1503,10 +1538,10 @@ exports.add_flash_sale_promotion = (req, result) => {
   var body = {};
   var serviceId = req.body.service_id;
   req.body.user_id = req.user.user_id;
-  req.body.type = 1;
+  req.body.type_id = 1;
   DeleteKeys(req.body, ["service_id"]);
   db.query(
-    "SELECT * FROM tbl_promotion WHERE user_id = ? AND type = 1",
+    "SELECT * FROM tbl_promotion WHERE user_id = ? AND type_id = 1",
     [req.body.user_id],
     (err, resp) => {
       if (err) {
@@ -1524,8 +1559,8 @@ exports.add_flash_sale_promotion = (req, result) => {
                   serviceId.length == 1 ? [serviceId] : serviceId.split(",");
                 s_id.forEach((e, i) => {
                   db.query(
-                    "INSERT INTO tbl_service_promotion(promotion_id,type,service_id,user_id)VALUES(?,?,?,?)",
-                    [res.insertId, req.body.type, e, req.body.user_id],
+                    "INSERT INTO tbl_service_promotion(promotion_id,type_id,service_id,user_id)VALUES(?,?,?,?)",
+                    [res.insertId, req.body.type_id, e, req.body.user_id],
                     (err, res1) => {
                       if (err) {
                         console.log("error", err);
@@ -1559,7 +1594,7 @@ exports.edit_flash_sale_promotion = (req, result) => {
   var body = {};
   function getdata() {
     db.query(
-      "SELECT * FROM tbl_promotion WHERE user_id = ? AND type = 1",
+      "SELECT * FROM tbl_promotion WHERE user_id = ? AND type_id = 1",
       [req.body.user_id],
       (err, res4) => {
         if (err) {
@@ -1576,7 +1611,7 @@ exports.edit_flash_sale_promotion = (req, result) => {
               "SELECT t1.*,t2.service_name,t2.service_price,t2.service_duration\n\
                FROM tbl_service_promotion t1 \n\
                LEFT JOIN tbl_provider_service t2 ON t1.service_id = t2.service_id\n\
-               WHERE t1.user_id = ? AND t1.type = 1",
+               WHERE t1.user_id = ? AND t1.type_id = 1",
               [req.body.user_id],
               (err, res5) => {
                 if (err) {
@@ -1609,14 +1644,14 @@ exports.edit_flash_sale_promotion = (req, result) => {
       } else {
         if (serviceId) {
           db.query(
-            "DELETE FROM tbl_service_promotion WHERE user_id = ? AND type = 1",
+            "DELETE FROM tbl_service_promotion WHERE user_id = ? AND type_id = 1",
             [req.body.user_id],
             (err, res1) => {
               if (err) {
                 console.log("error", err);
               } else {
                 db.query(
-                  "SELECT promotion_id FROM tbl_promotion WHERE user_id = ? AND type = 1",
+                  "SELECT promotion_id FROM tbl_promotion WHERE user_id = ? AND type_id = 1",
                   [req.body.user_id],
                   (err, res2) => {
                     if (err) {
@@ -1628,7 +1663,7 @@ exports.edit_flash_sale_promotion = (req, result) => {
                           : serviceId.split(",");
                       s_id.forEach((e, i) => {
                         db.query(
-                          "INSERT INTO tbl_service_promotion(promotion_id,type,service_id,user_id)VALUES(?,1,?,?)",
+                          "INSERT INTO tbl_service_promotion(promotion_id,type_id,service_id,user_id)VALUES(?,1,?,?)",
                           [res2[0].promotion_id, e, req.body.user_id],
                           (err, res3) => {
                             if (err) {
@@ -1687,10 +1722,10 @@ exports.add_last_minute_discount = (req, result) => {
   var body = {};
   var serviceId = req.body.service_id;
   req.body.user_id = req.user.user_id;
-  req.body.type = 2;
+  req.body.type_id = 2;
   DeleteKeys(req.body, ["service_id"]);
   db.query(
-    "SELECT * FROM tbl_promotion WHERE user_id = ? AND type = 2",
+    "SELECT * FROM tbl_promotion WHERE user_id = ? AND type_id = 2",
     [req.body.user_id],
     (err, resp) => {
       if (err) {
@@ -1708,8 +1743,8 @@ exports.add_last_minute_discount = (req, result) => {
                   serviceId.length == 1 ? [serviceId] : serviceId.split(",");
                 s_id.forEach((e, i) => {
                   db.query(
-                    "INSERT INTO tbl_service_promotion(promotion_id,type,service_id,user_id)VALUES(?,?,?,?)",
-                    [res.insertId, req.body.type, e, req.body.user_id],
+                    "INSERT INTO tbl_service_promotion(promotion_id,type_id,service_id,user_id)VALUES(?,?,?,?)",
+                    [res.insertId, req.body.type_id, e, req.body.user_id],
                     (err, res1) => {
                       if (err) {
                         console.log("error", err);
@@ -1743,7 +1778,7 @@ exports.edit_last_minute_discount = (req, result) => {
   var body = {};
   function getdata() {
     db.query(
-      "SELECT * FROM tbl_promotion WHERE user_id = ? AND type = 2",
+      "SELECT * FROM tbl_promotion WHERE user_id = ? AND type_id = 2",
       [req.body.user_id],
       (err, res4) => {
         if (err) {
@@ -1760,7 +1795,7 @@ exports.edit_last_minute_discount = (req, result) => {
               "SELECT t1.*,t2.service_name,t2.service_price,t2.service_duration\n\
                FROM tbl_service_promotion t1 \n\
                LEFT JOIN tbl_provider_service t2 ON t1.service_id = t2.service_id\n\
-               WHERE t1.user_id = ? AND t1.type = 2",
+               WHERE t1.user_id = ? AND t1.type_id = 2",
               [req.body.user_id],
               (err, res5) => {
                 if (err) {
@@ -1793,14 +1828,14 @@ exports.edit_last_minute_discount = (req, result) => {
       } else {
         if (serviceId) {
           db.query(
-            "DELETE FROM tbl_service_promotion WHERE user_id = ? AND type = 2",
+            "DELETE FROM tbl_service_promotion WHERE user_id = ? AND type_id = 2",
             [req.body.user_id],
             (err, res1) => {
               if (err) {
                 console.log("error", err);
               } else {
                 db.query(
-                  "SELECT promotion_id FROM tbl_promotion WHERE user_id = ? AND type = 2",
+                  "SELECT promotion_id FROM tbl_promotion WHERE user_id = ? AND type_id = 2",
                   [req.body.user_id],
                   (err, res2) => {
                     if (err) {
@@ -1812,7 +1847,7 @@ exports.edit_last_minute_discount = (req, result) => {
                           : serviceId.split(",");
                       s_id.forEach((e, i) => {
                         db.query(
-                          "INSERT INTO tbl_service_promotion(promotion_id,type,service_id,user_id)VALUES(?,2,?,?)",
+                          "INSERT INTO tbl_service_promotion(promotion_id,type_id,service_id,user_id)VALUES(?,2,?,?)",
                           [res2[0].promotion_id, e, req.body.user_id],
                           (err, res3) => {
                             if (err) {
@@ -1843,7 +1878,7 @@ exports.get_happy_hour = (req, result) => {
   var body = {};
   function getdata() {
     db.query(
-      "SELECT day,promotion_id,user_id,type,discount,start_time,end_time FROM tbl_promotion WHERE user_id = ? AND type = 3",
+      "SELECT day,promotion_id,user_id,type_id,discount,start_time,end_time FROM tbl_promotion WHERE user_id = ? AND type_id = 3",
       [req.user.user_id],
       (err, resp) => {
         if (err) {
@@ -1860,7 +1895,7 @@ exports.get_happy_hour = (req, result) => {
   }
 
   db.query(
-    "SELECT * FROM tbl_promotion WHERE user_id = ? AND type = 3",
+    "SELECT * FROM tbl_promotion WHERE user_id = ? AND type_id = 3",
     [req.user.user_id],
     (err, res) => {
       if (err) {
@@ -1892,7 +1927,7 @@ exports.get_happy_hour = (req, result) => {
           ];
           happyHour.forEach((e, i) => {
             db.query(
-              "INSERT INTO tbl_promotion(user_id,type,day) VALUES (?,3,?)",
+              "INSERT INTO tbl_promotion(user_id,type_id,day) VALUES (?,3,?)",
               [req.user.user_id, e.day],
               (err, res1) => {
                 if (err) {
@@ -1917,7 +1952,7 @@ exports.edit_daywise_happy_hour = (req, result) => {
   var body = {};
   function getdata() {
     db.query(
-      "SELECT day,promotion_id,user_id,type,discount,start_time,end_time FROM tbl_promotion WHERE promotion_id = ?",
+      "SELECT day,promotion_id,user_id,type_id,discount,start_time,end_time FROM tbl_promotion WHERE promotion_id = ?",
       [req.body.promotion_id],
       (err, res4) => {
         if (err) {
@@ -2379,6 +2414,207 @@ exports.add_workshift = (req, result) => {
                 return;
               }
             });
+          }
+        });
+      }
+    }
+  );
+};
+
+exports.edit_workshift = (req, result) => {
+  var body = {};
+  function getworkshift() {
+    db.query(
+      "SELECT * FROM tbl_member_workshift WHERE user_id = ? AND member_id = ?",
+      [req.user.user_id, req.body.member_id],
+      (err, res) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          if (res.length <= 0) {
+            body.Status = 1;
+            body.Message = "No workshift added";
+            body.info = {};
+            result(null, body);
+            return;
+          } else {
+            db.query(
+              "SELECT * FROM tbl_member_workshift_break WHERE workshift_id = ?",
+              [res[0].workshift_id],
+              (err, res1) => {
+                if (err) {
+                  console.log("error", err);
+                } else {
+                  db.query(
+                    "SELECT * FROM tbl_workshift_timeoff WHERE user_id = ? AND member_id = ?",
+                    [req.user.user_id, req.body.member_id],
+                    (err, res2) => {
+                      if (err) {
+                        console.log("error", err);
+                      } else {
+                        res[0]["break"] = res1;
+                        res[0]["time_off"] = res2;
+                        body.Status = 1;
+                        body.Message = "Workshift edited successfully";
+                        body.info = res[0];
+                        result(null, body);
+                        return;
+                      }
+                    }
+                  );
+                }
+              }
+            );
+          }
+        }
+      }
+    );
+  }
+  if (req.body.workshift_data) {
+    var obj = JSON.parse(req.body.workshift_data);
+    var workshift = {
+      workshift_id: obj.workshift_id,
+      user_id: req.user.user_id,
+      member_id: req.body.member_id,
+      shift_date: req.body.calender_date,
+      start_time: obj.start_time,
+      end_time: obj.end_time,
+    };
+    db.query(
+      "UPDATE tbl_workshifts SET ? WHERE workshift_id = ?",
+      [workshift],
+      (err, res) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          var breakdata = e.break.length <= 0 ? [0] : e.break;
+          breakdata.forEach((e1, i1) => {
+            if (e1 != 0) {
+              var break_data = {
+                user_id: req.user.user_id,
+                workshift: obj.workshift_id,
+                break_start: e1.break_start,
+                break_end: e1.break_end,
+              };
+              if (e1.break_id == 0) {
+                //INSERT
+                db.query(
+                  "INSERT INTO tbl_member_workshift_break SET ?",
+                  [break_data],
+                  (err, res1) => {
+                    if (err) {
+                      console.log("error", err);
+                    }
+                  }
+                );
+              } else {
+                //UPDATE
+                db.query(
+                  "UPDATE tbl_member_workshift_break SET ? WHERE break_id = ?",
+                  [break_data, e1.break_id],
+                  (err, res1) => {
+                    if (err) {
+                      console.log("error", err);
+                    }
+                  }
+                );
+              }
+            }
+            if (breakdata.length - 1 == i1) {
+              var timeoffdata = e.timeoff.length <= 0 ? [0] : e.timeoff;
+              timeoffdata.forEach((e2, i2) => {
+                if (e2 != 0) {
+                  var timeoff_data = {
+                    user_id: req.user.user_id,
+                    member_id: req.body.member_id,
+                    timeoff_date: e2.timeoff_date,
+                    reason_id: e2.reason_id,
+                    type: e2.type,
+                    start_date: e2.start_date,
+                    end_date: e2.end_date,
+                    start_time: e2.start_time,
+                    end_time: e2.end_time,
+                  };
+                  if (e2.timeoff_id == 0) {
+                    //INSERT
+                    db.query(
+                      "INSERT INTO tbl_workshift_timeoff SET ?",
+                      [timeoff_data],
+                      (err, res2) => {
+                        if (err) {
+                          console.log("error", err);
+                        }
+                      }
+                    );
+                  } else {
+                    //UPDATE
+                    db.query(
+                      "UPDATE tbl_workshift_timeoff SET ? WHERE timeoff_id = ?",
+                      [timeoff_data, e2.timeoff_id],
+                      (err, res2) => {
+                        if (err) {
+                          console.log("error", err);
+                        }
+                      }
+                    );
+                  }
+                }
+                if (timeoffdata.length - 1 == i2) {
+                  getworkshift();
+                }
+              });
+            }
+          });
+        }
+      }
+    );
+  } else {
+    getworkshift();
+  }
+};
+
+exports.list_all_member_workshift = (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT t1.user_id as member_id,t1.first_name,t1.last_name,t1.profile_pic,\n\
+    IFNULL(t2.workshift_id,0)as workshift_id,t2.start_time,t2.end_time,t2.shift_date\n\
+    FROM tbl_users t1\n\
+    LEFT JOIN tbl_member_workshift t2 ON t1.user_id = t2.member_id AND t2.shift_date = ?\n\
+    WHERE t1.added_by = ?",
+    [req.body.calender_date, req.user.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        res.forEach((e, i) => {
+          if (e.workshift_id == 0) {
+            res[i]["break"] = [];
+            if (res.length - 1 == i) {
+              body.Status = 1;
+              body.Message = "Workshift listed successfully";
+              body.info = res;
+              result(null, body);
+              return;
+            }
+          } else {
+            db.query(
+              "SELECT * FROM tbl_member_workshift_break WHERE workshift_id = ?",
+              [e.workshift_id],
+              (err, res1) => {
+                if (err) {
+                  console.log("error", err);
+                } else {
+                  res[i]["break"] = res1;
+                  if (res.length - 1 == i) {
+                    body.Status = 1;
+                    body.Message = "Workshift listed successfully";
+                    body.info = res;
+                    result(null, body);
+                    return;
+                  }
+                }
+              }
+            );
           }
         });
       }

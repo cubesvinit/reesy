@@ -465,6 +465,20 @@ exports.list_promote_plan = (req, res) => {
   });
 };
 
+exports.list_promotion = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.list_promotion(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
 exports.promote_saloon = (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -723,6 +737,34 @@ exports.add_workshift = (req, res) => {
     return res.status(422).json({ errors: errors.array() });
   }
   providerService.add_workshift(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.edit_workshift = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.edit_workshift(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.list_all_member_workshift = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.list_all_member_workshift(req, (err, data) => {
     if (err) {
       return res.status(400).json(err);
     } else {

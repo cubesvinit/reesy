@@ -1620,9 +1620,8 @@ exports.get_saloon_details = async (req, result) => {
   db.query(
     "SELECT t1.user_id,t1.bussiness_name,t1.street_address1,\n\
   t1.city,t1.zipcode,bussiness_lat,t1.bussiness_long,\n\
-  (SELECT IF(COUNT(t2.like_id) != 0,1,0) FROM tbl_like_saloon t2 WHERE t2.like_to = t1.user_id AND t2.like_by = " +
-      req.user.user_id +
-      ")as is_like_by_me,\n FROM tbl_users t1 WHERE t1.user_id = ? AND t1.user_role = 'provider'",
+  (SELECT IF(COUNT(t2.like_id) != 0,1,0) FROM tbl_like_saloon t2 WHERE t2.like_to = t1.user_id AND t2.like_by = ?)as is_like_by_me\n\
+   FROM tbl_users t1 WHERE t1.user_id = ? AND t1.user_role = 'provider'",
     [req.user.user_id, req.body.user_id],
     (err, res) => {
       if (err) {
