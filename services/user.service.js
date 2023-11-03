@@ -604,7 +604,7 @@ exports.login_by_thirdparty = (req, result) => {
             signupdata(user_data, token_data);
           }
         } else {
-          console.log("data",data);
+          console.log("data", data);
           if (data[0].is_block == 1) {
             body.Status = 0;
             body.Message =
@@ -633,7 +633,7 @@ exports.login_by_thirdparty = (req, result) => {
             return;
           } else if (
             data[0].email_id == req.body.email_id &&
-              data[0].user_role != req.body.user_role
+            data[0].user_role != req.body.user_role
           ) {
             body.Status = 0;
             body.Message = "An account already exists with your email_id";
@@ -1245,7 +1245,7 @@ exports.get_main_data = (req, result) => {
         } else {
           var resp = [];
           for (var i = 1; i < res.length; i++) {
-            DeleteKeys(res[i], ["is_category", "is_benefit", "is_gender"]);
+            DeleteKeys(res[i], ["is_category", "is_benefit", "is_gender","new_distance"]);
             resp.push(res[i]);
           }
           db.query(
@@ -1466,13 +1466,7 @@ exports.like_unlike_saloon = (req, result) => {
   (SELECT IF(COUNT(t5.like_id) != 0,1,0) FROM tbl_like_saloon t5 WHERE t5.like_to = t1.user_id AND t5.like_by = " +
         data.like_by +
         ")as is_like_by_me,\n\
- (SELECT (t2.image) FROM tbl_workplace_image t2 WHERE t1.user_id = t2.user_id ORDER BY t2.image_id ASC LIMIT 1)as work_image,\n\
- format(111.111 *\n\
-  DEGREES(ACOS(LEAST(1.0, COS(RADIANS(t1.bussiness_lat))\n\
-       * COS(RADIANS(?))\n\
-       * COS(RADIANS(t1.bussiness_long - ?))\n\
-       + SIN(RADIANS(t1.bussiness_lat))\n\
-       * SIN(RADIANS(?))))), 2) AS new_distance\n\
+ (SELECT (t2.image) FROM tbl_workplace_image t2 WHERE t1.user_id = t2.user_id ORDER BY t2.image_id ASC LIMIT 1)as work_image\n\
  FROM tbl_users t1\n\
  LEFT JOIN tbl_bussiness_hour t3 ON t3.day = DAYNAME('" +
         curernt_date +
@@ -1485,6 +1479,7 @@ exports.like_unlike_saloon = (req, result) => {
         } else {
           body.Status = 1;
           body.Message = "Saloon " + word + " successful";
+          body.info = resp[0];
           result(null, body);
           return;
         }

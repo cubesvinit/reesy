@@ -383,41 +383,143 @@ exports.account_setup = (req, result) => {
                                                                                       err
                                                                                     );
                                                                                   } else {
-                                                                                    if (
-                                                                                      obj2.length -
-                                                                                        1 ==
-                                                                                      i5
-                                                                                    ) {
-                                                                                      userService.findByUserId(
-                                                                                        req
-                                                                                          .user
-                                                                                          .user_id,
-                                                                                        (
-                                                                                          err,
-                                                                                          resdata
-                                                                                        ) => {
-                                                                                          if (
-                                                                                            err
-                                                                                          ) {
-                                                                                            console.log(
-                                                                                              "error",
+                                                                                    obj.forEach(
+                                                                                      (
+                                                                                        e,
+                                                                                        i
+                                                                                      ) => {
+                                                                                        var b_data =
+                                                                                          {
+                                                                                            user_id:
+                                                                                              req
+                                                                                                .user
+                                                                                                .user_id,
+                                                                                            member_id:
+                                                                                              res8.insertId,
+                                                                                            day: e.day,
+                                                                                            start_time:
+                                                                                              e.start_time,
+                                                                                            end_time:
+                                                                                              e.close_time,
+                                                                                            is_closed:
+                                                                                              e.is_closed,
+                                                                                          };
+                                                                                        db.query(
+                                                                                          "INSERT INTO tbl_member_workshift SET ?",
+                                                                                          [
+                                                                                            b_data,
+                                                                                          ],
+                                                                                          (
+                                                                                            err,
+                                                                                            res9
+                                                                                          ) => {
+                                                                                            if (
                                                                                               err
-                                                                                            );
-                                                                                          } else {
-                                                                                            body.Status = 1;
-                                                                                            body.Message =
-                                                                                              "Account setup successful";
-                                                                                            body.info =
-                                                                                              resdata;
-                                                                                            result(
-                                                                                              null,
-                                                                                              body
-                                                                                            );
-                                                                                            return;
+                                                                                            ) {
+                                                                                              console.log(
+                                                                                                "error",
+                                                                                                err
+                                                                                              );
+                                                                                            } else {
+                                                                                              var breakdata =
+                                                                                                e
+                                                                                                  .break
+                                                                                                  .length <=
+                                                                                                0
+                                                                                                  ? [
+                                                                                                      0,
+                                                                                                    ]
+                                                                                                  : e.break;
+                                                                                              breakdata.forEach(
+                                                                                                (
+                                                                                                  e1,
+                                                                                                  i1
+                                                                                                ) => {
+                                                                                                  if (
+                                                                                                    e1 !=
+                                                                                                    0
+                                                                                                  ) {
+                                                                                                    var break_data =
+                                                                                                      {
+                                                                                                        user_id:
+                                                                                                          req
+                                                                                                            .user
+                                                                                                            .user_id,
+                                                                                                        workshift_id:
+                                                                                                          res9.insertId,
+                                                                                                        break_start:
+                                                                                                          e1.break_start,
+                                                                                                        break_end:
+                                                                                                          e1.break_end,
+                                                                                                      };
+                                                                                                    db.query(
+                                                                                                      "INSERT INTO tbl_member_workshift_break SET ?",
+                                                                                                      [
+                                                                                                        break_data,
+                                                                                                      ],
+                                                                                                      (
+                                                                                                        err,
+                                                                                                        res10
+                                                                                                      ) => {
+                                                                                                        if (
+                                                                                                          err
+                                                                                                        ) {
+                                                                                                          console.log(
+                                                                                                            "error",
+                                                                                                            err
+                                                                                                          );
+                                                                                                        }
+                                                                                                      }
+                                                                                                    );
+                                                                                                  }
+                                                                                                  if (
+                                                                                                    obj2.length -
+                                                                                                      1 ==
+                                                                                                      i5 &&
+                                                                                                    obj.length -
+                                                                                                      1 ==
+                                                                                                      i &&
+                                                                                                    breakdata.length -
+                                                                                                      1 ==
+                                                                                                      i1
+                                                                                                  ) {
+                                                                                                    userService.findByUserId(
+                                                                                                      req
+                                                                                                        .user
+                                                                                                        .user_id,
+                                                                                                      (
+                                                                                                        err,
+                                                                                                        resdata
+                                                                                                      ) => {
+                                                                                                        if (
+                                                                                                          err
+                                                                                                        ) {
+                                                                                                          console.log(
+                                                                                                            "error",
+                                                                                                            err
+                                                                                                          );
+                                                                                                        } else {
+                                                                                                          body.Status = 1;
+                                                                                                          body.Message =
+                                                                                                            "Account setup successful";
+                                                                                                          body.info =
+                                                                                                            resdata;
+                                                                                                          result(
+                                                                                                            null,
+                                                                                                            body
+                                                                                                          );
+                                                                                                          return;
+                                                                                                        }
+                                                                                                      }
+                                                                                                    );
+                                                                                                  }
+                                                                                                }
+                                                                                              );
+                                                                                            }
                                                                                           }
-                                                                                        }
-                                                                                      );
-                                                                                    }
+                                                                                        );
+                                                                                      }
+                                                                                    );
                                                                                   }
                                                                                 }
                                                                               );
@@ -684,30 +786,37 @@ exports.delete_workplace_image = (req, result) => {
         result(err, null);
         return;
       } else {
-        var filepath = res[0].image;
-        if (filepath != null) {
-          try {
-            fs.unlinkSync(filepath);
-          } catch (e) {
-            console.log("No image found");
-          }
-        }
-        db.query(
-          "DELETE FROM tbl_workplace_image WHERE image_id = ?",
-          [req.body.image_id],
-          (err, res1) => {
-            if (err) {
-              console.log("error", err);
-              result(err, null);
-              return;
-            } else {
-              body.Status = 1;
-              body.Message = "Image deleted successful";
-              result(null, body);
-              return;
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No image found";
+          result(null, body);
+          return;
+        } else {
+          var filepath = res[0].image;
+          if (filepath != null) {
+            try {
+              fs.unlinkSync(filepath);
+            } catch (e) {
+              console.log("No image found");
             }
           }
-        );
+          db.query(
+            "DELETE FROM tbl_workplace_image WHERE image_id = ?",
+            [req.body.image_id],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+                result(err, null);
+                return;
+              } else {
+                body.Status = 1;
+                body.Message = "Image deleted successful";
+                result(null, body);
+                return;
+              }
+            }
+          );
+        }
       }
     }
   );
@@ -754,7 +863,6 @@ exports.edit_bussiness_hour = (req, result) => {
 
   if (req.body.bussiness_hour) {
     var obj = JSON.parse(req.body.bussiness_hour);
-    console.log("obj", obj);
     obj.forEach((e, i) => {
       var b_data = {
         user_id: req.user.user_id,
@@ -787,6 +895,7 @@ exports.edit_bussiness_hour = (req, result) => {
                     (err, res4) => {
                       if (err) {
                         console.log("error", err);
+                      } else {
                       }
                     }
                   );
@@ -852,13 +961,76 @@ exports.add_staff_member = (req, result) => {
   db.query("INSERT INTO tbl_users SET ?", [req.body], (err, res) => {
     if (err) {
       console.log("error", err);
-      result(err, null);
-      return;
     } else {
-      body.Status = 1;
-      body.Message = "Member added successful";
-      result(null, body);
-      return;
+      db.query(
+        "SELECT * FROM tbl_bussiness_hour WHERE user_id = ?",
+        [req.user.user_id],
+        (err, res1) => {
+          if (err) {
+            console.log("error", err);
+          } else {
+            res1.forEach((e2, i2) => {
+              db.query(
+                "SELECT * FROM tbl_bussiness_hour_break WHERE hour_id = ?",
+                [e2.hour_id],
+                (err, res2) => {
+                  if (err) {
+                    console.log("error", err);
+                  } else {
+                    var workshift_data = {
+                      user_id: req.user.user_id,
+                      member_id: res.insertId,
+                      day: e2.day,
+                      start_time: e2.start_time,
+                      end_time: e2.close_time,
+                      is_closed: e2.is_closed,
+                    };
+                    db.query(
+                      "INSERT INTO tbl_member_workshift SET ?",
+                      [workshift_data],
+                      (err, res3) => {
+                        if (err) {
+                          console.log("error", err);
+                        } else {
+                          var breakdata = res2.length <= 0 ? [0] : res2;
+                          breakdata.forEach((e3, i3) => {
+                            if (e3 != 0) {
+                              var break_data = {
+                                user_id: req.user.user_id,
+                                workshift_id: res3.insertId,
+                                break_start: e3.break_start,
+                                break_end: e3.break_end,
+                              };
+                              db.query(
+                                "INSERT INTO tbl_member_workshift_break SET ?",
+                                [break_data],
+                                (err, res4) => {
+                                  if (err) {
+                                    console.log("error", err);
+                                  }
+                                }
+                              );
+                            }
+                            if (
+                              breakdata.length - 1 == i3 &&
+                              res1.length - 1 == i2
+                            ) {
+                              body.Status = 1;
+                              body.Message = "Member added successful";
+                              result(null, body);
+                              return;
+                            }
+                          });
+                        }
+                      }
+                    );
+                  }
+                }
+              );
+            });
+          }
+        }
+      );
     }
   });
 };
@@ -1603,6 +1775,7 @@ exports.edit_flash_sale_promotion = (req, result) => {
           if (res4.length <= 0) {
             body.Status = 1;
             body.Message = "No data found";
+            body.is_added = 0;
             body.info = {};
             result(null, body);
             return;
@@ -1787,6 +1960,7 @@ exports.edit_last_minute_discount = (req, result) => {
           if (res4.length <= 0) {
             body.Status = 1;
             body.Message = "No data found";
+            body.is_added = 0;
             body.info = {};
             result(null, body);
             return;
@@ -1961,6 +2135,7 @@ exports.edit_daywise_happy_hour = (req, result) => {
           if (res4.length <= 0) {
             body.Status = 1;
             body.Message = "No data found";
+            body.is_added = 0;
             body.info = {};
             result(null, body);
             return;
@@ -2300,7 +2475,7 @@ exports.get_staff_member = (req, result) => {
   db.query(
     "SELECT t1.user_id,t1.added_by,t1.user_role,t1.first_name,t1.last_name,\n\
   t1.profile_pic,t1.is_available\n\
-FROM tbl_users t1 WHERE t1.added_by = ?",
+ FROM tbl_users t1 WHERE t1.added_by = ?",
     [req.body.user_id],
     (err, res) => {
       if (err) {
@@ -2318,13 +2493,17 @@ FROM tbl_users t1 WHERE t1.added_by = ?",
 
 exports.get_opening_calender = (req, result) => {
   var body = {};
+  console.log(req.user.user_id);
   db.query(
-    `SELECT * FROM tbl_bussiness_hour WHERE user_id = ? AND day = DAYNAME(${req.body.calender_date})`,
+    "SELECT * FROM tbl_bussiness_hour WHERE user_id = ? AND day = DAYNAME('" +
+      req.body.calender_date +
+      "')",
     [req.user.user_id],
     (err, res) => {
       if (err) {
         console.log("error", err);
       } else {
+        console.log("res", res);
         db.query(
           "SELECT * FROM tbl_bussiness_hour_break WHERE hour_id = ?",
           [res[0].hour_id],
@@ -2363,12 +2542,12 @@ exports.add_workshift = (req, result) => {
       if (err) {
         console.log("error", err);
       } else {
-        var breakdata = e.break.length <= 0 ? [0] : e.break;
+        var breakdata = obj.break.length <= 0 ? [0] : obj.break;
         breakdata.forEach((e1, i1) => {
           if (e1 != 0) {
             var break_data = {
               user_id: req.user.user_id,
-              workshift: res.insertId,
+              workshift_id: res.insertId,
               break_start: e1.break_start,
               break_end: e1.break_end,
             };
@@ -2383,7 +2562,7 @@ exports.add_workshift = (req, result) => {
             );
           }
           if (breakdata.length - 1 == i1) {
-            var timeoffdata = e.timeoff.length <= 0 ? [0] : e.timeoff;
+            var timeoffdata = obj.timeoff.length <= 0 ? [0] : obj.timeoff;
             timeoffdata.forEach((e2, i2) => {
               if (e2 != 0) {
                 var timeoff_data = {
@@ -2423,9 +2602,12 @@ exports.add_workshift = (req, result) => {
 
 exports.edit_workshift = (req, result) => {
   var body = {};
+  var calender_date = req.body.calender_date;
   function getworkshift() {
     db.query(
-      "SELECT * FROM tbl_member_workshift WHERE user_id = ? AND member_id = ?",
+      "SELECT * FROM tbl_member_workshift WHERE user_id = ? AND member_id = ? AND day = DAYNAME('" +
+        calender_date +
+        "')",
       [req.user.user_id, req.body.member_id],
       (err, res) => {
         if (err) {
@@ -2453,7 +2635,7 @@ exports.edit_workshift = (req, result) => {
                         console.log("error", err);
                       } else {
                         res[0]["break"] = res1;
-                        res[0]["time_off"] = res2;
+                        res[0]["timeoff"] = res2;
                         body.Status = 1;
                         body.Message = "Workshift edited successfully";
                         body.info = res[0];
@@ -2476,23 +2658,23 @@ exports.edit_workshift = (req, result) => {
       workshift_id: obj.workshift_id,
       user_id: req.user.user_id,
       member_id: req.body.member_id,
-      shift_date: req.body.calender_date,
       start_time: obj.start_time,
       end_time: obj.end_time,
+      is_closed: obj.is_closed,
     };
     db.query(
       "UPDATE tbl_workshifts SET ? WHERE workshift_id = ?",
-      [workshift],
+      [workshift, workshift.workshift_id],
       (err, res) => {
         if (err) {
           console.log("error", err);
         } else {
-          var breakdata = e.break.length <= 0 ? [0] : e.break;
+          var breakdata = obj.break.length <= 0 ? [0] : obj.break;
           breakdata.forEach((e1, i1) => {
             if (e1 != 0) {
               var break_data = {
                 user_id: req.user.user_id,
-                workshift: obj.workshift_id,
+                workshift_id: obj.workshift_id,
                 break_start: e1.break_start,
                 break_end: e1.break_end,
               };
@@ -2521,7 +2703,7 @@ exports.edit_workshift = (req, result) => {
               }
             }
             if (breakdata.length - 1 == i1) {
-              var timeoffdata = e.timeoff.length <= 0 ? [0] : e.timeoff;
+              var timeoffdata = obj.timeoff.length <= 0 ? [0] : obj.timeoff;
               timeoffdata.forEach((e2, i2) => {
                 if (e2 != 0) {
                   var timeoff_data = {
@@ -2576,46 +2758,71 @@ exports.edit_workshift = (req, result) => {
 exports.list_all_member_workshift = (req, result) => {
   var body = {};
   db.query(
-    "SELECT t1.user_id as member_id,t1.first_name,t1.last_name,t1.profile_pic,\n\
-    IFNULL(t2.workshift_id,0)as workshift_id,t2.start_time,t2.end_time,t2.shift_date\n\
-    FROM tbl_users t1\n\
-    LEFT JOIN tbl_member_workshift t2 ON t1.user_id = t2.member_id AND t2.shift_date = ?\n\
-    WHERE t1.added_by = ?",
-    [req.body.calender_date, req.user.user_id],
+    "SELECT t1.*,\n\
+    t2.first_name,t2.last_name,t2.profile_pic\n\
+    FROM tbl_member_workshift t1\n\
+    JOIN tbl_users t2 ON t1.member_id = t2.user_id\n\
+    WHERE t1.user_id = ? AND t1.day = DAYNAME('" +
+      req.body.calender_date +
+      "')",
+    [req.user.user_id],
     (err, res) => {
       if (err) {
         console.log("error", err);
       } else {
         res.forEach((e, i) => {
-          if (e.workshift_id == 0) {
-            res[i]["break"] = [];
-            if (res.length - 1 == i) {
-              body.Status = 1;
-              body.Message = "Workshift listed successfully";
-              body.info = res;
-              result(null, body);
-              return;
-            }
-          } else {
-            db.query(
-              "SELECT * FROM tbl_member_workshift_break WHERE workshift_id = ?",
-              [e.workshift_id],
-              (err, res1) => {
-                if (err) {
-                  console.log("error", err);
-                } else {
-                  res[i]["break"] = res1;
-                  if (res.length - 1 == i) {
-                    body.Status = 1;
-                    body.Message = "Workshift listed successfully";
-                    body.info = res;
-                    result(null, body);
-                    return;
-                  }
+          db.query(
+            "SELECT * FROM tbl_member_workshift_break WHERE workshift_id = ?",
+            [e.workshift_id],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                res[i]["break"] = res1;
+                if (res.length - 1 == i) {
+                  body.Status = 1;
+                  body.Message = "Workshift listed successfully";
+                  body.info = res;
+                  result(null, body);
+                  return;
                 }
               }
-            );
-          }
+            }
+          );
+        });
+      }
+    }
+  );
+};
+
+exports.list_member_workshift = (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT * FROM tbl_member_workshift WHERE user_id = ? AND member_id = ?",
+    [req.user.user_id, req.body.member_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        res.forEach((e, i) => {
+          db.query(
+            "SELECT * FROM tbl_member_workshift_break WHERE workshift_id = ?",
+            [e.workshift_id],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                res[i]["break"] = res1;
+                if (res.length - 1 == i) {
+                  body.Status = 1;
+                  body.Message = "Workshift get successful";
+                  body.info = res;
+                  result(null, body);
+                  return;
+                }
+              }
+            }
+          );
         });
       }
     }

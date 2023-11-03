@@ -773,6 +773,20 @@ exports.list_all_member_workshift = (req, res) => {
   });
 };
 
+exports.list_member_workshift = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.list_member_workshift(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
 exports.get_time_slot = (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

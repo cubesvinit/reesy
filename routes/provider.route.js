@@ -403,6 +403,13 @@ router.post(
 );
 
 router.post(
+  "/list_member_workshift",
+  [check("member_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.list_member_workshift
+);
+
+router.post(
   "/get_time_slot",
   [
     check("member_id").not().isEmpty().trim().escape(),
