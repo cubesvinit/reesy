@@ -243,6 +243,20 @@ exports.edit_bussiness_hour = (req, res) => {
   });
 };
 
+exports.edit_daywise_bussiness_hour = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.edit_daywise_bussiness_hour(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
 exports.delete_break = (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -779,6 +793,20 @@ exports.list_member_workshift = (req, res) => {
     return res.status(422).json({ errors: errors.array() });
   }
   providerService.list_member_workshift(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.list_reason = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.list_reason(req, (err, data) => {
     if (err) {
       return res.status(400).json(err);
     } else {

@@ -823,6 +823,7 @@ exports.delete_workplace_image = (req, result) => {
 };
 
 exports.edit_bussiness_hour = (req, result) => {
+  console.log("edit_bussiness_hour api called", req.body);
   var body = {};
   function getbussinesshour() {
     db.query(
@@ -863,6 +864,7 @@ exports.edit_bussiness_hour = (req, result) => {
 
   if (req.body.bussiness_hour) {
     var obj = JSON.parse(req.body.bussiness_hour);
+    console.log("obj", obj);
     obj.forEach((e, i) => {
       var b_data = {
         user_id: req.user.user_id,
@@ -922,6 +924,68 @@ exports.edit_bussiness_hour = (req, result) => {
   } else {
     getbussinesshour();
   }
+};
+
+exports.edit_daywise_bussiness_hour = (req, result) => {
+  var body = {};
+  var obj = JSON.parse(req.body.bussiness_hour);
+  var b_data = {
+    hour_id: obj.hour_id,
+    user_id: req.user.user_id,
+    day: obj.day,
+    start_time: obj.start_time,
+    close_time: obj.close_time,
+    is_closed: obj.is_closed,
+  };
+  db.query(
+    "UPDATE tbl_bussiness_hour SET ? WHERE hour_id = ?",
+    [b_data, b_data.hour_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        var breakdata = obj.break.length <= 0 ? [0] : obj.break;
+        breakdata.forEach((e, i) => {
+          if (e1 != 0) {
+            var break_data = {
+              user_id: req.user.user_id,
+              hour_id: e.hour_id,
+              break_start: e.break_start,
+              break_end: e.break_end,
+            };
+            if (e.break_id == 0) {
+              db.query(
+                "INSERT INTO tbl_bussiness_hour_break SET ?",
+                [break_data],
+                (err, res4) => {
+                  if (err) {
+                    console.log("error", err);
+                  } else {
+                  }
+                }
+              );
+            } else {
+              db.query(
+                "UPDATE tbl_bussiness_hour_break SET ? WHERE break_id = ?",
+                [break_data, e1.break_id],
+                (err, res4) => {
+                  if (err) {
+                    console.log("error", err);
+                  }
+                }
+              );
+            }
+          }
+          if (breakdata.length - 1 == i) {
+            body.Status = 1;
+            body.Message = "Bussiness hour edited successfully";
+            result(null, body);
+            return;
+          }
+        });
+      }
+    }
+  );
 };
 
 exports.delete_break = (req, result) => {
@@ -2827,6 +2891,21 @@ exports.list_member_workshift = (req, result) => {
       }
     }
   );
+};
+
+exports.list_reason = (req, result) => {
+  var body = {};
+  db.query("SELECT * FROM tbl_timeoff_reason", (err, res) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      body.Status = 1;
+      body.Message = "Reason get successful";
+      body.info = res;
+      result(null, body);
+      return;
+    }
+  });
 };
 
 exports.get_time_slot = (req, result) => {

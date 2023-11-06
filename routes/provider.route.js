@@ -103,6 +103,12 @@ router.post(
 );
 
 router.post(
+  "/edit_daywise_bussiness_hour",
+  [authenticate],
+  providerController.edit_daywise_bussiness_hour
+);
+
+router.post(
   "/delete_break",
   [check("break_id").not().isEmpty().trim().escape()],
   [authenticate],
@@ -407,6 +413,11 @@ router.post(
   [check("member_id").not().isEmpty().trim().escape()],
   [authenticate],
   providerController.list_member_workshift
+);
+
+router.post(
+  "/list_reason",
+  providerController.list_reason
 );
 
 router.post(
