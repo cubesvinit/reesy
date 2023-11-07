@@ -1831,7 +1831,7 @@ exports.edit_flash_sale_promotion = (req, result) => {
   function getdata() {
     db.query(
       "SELECT * FROM tbl_promotion WHERE user_id = ? AND type_id = 1",
-      [req.body.user_id],
+      [req.user.user_id],
       (err, res4) => {
         if (err) {
           console.log("error", err);
@@ -1849,7 +1849,7 @@ exports.edit_flash_sale_promotion = (req, result) => {
                FROM tbl_service_promotion t1 \n\
                LEFT JOIN tbl_provider_service t2 ON t1.service_id = t2.service_id\n\
                WHERE t1.user_id = ? AND t1.type_id = 1",
-              [req.body.user_id],
+              [req.user.user_id],
               (err, res5) => {
                 if (err) {
                   console.log("error", err);
@@ -1874,7 +1874,7 @@ exports.edit_flash_sale_promotion = (req, result) => {
   DeleteKeys(req.body, ["service_id"]);
   db.query(
     "UPDATE tbl_promotion SET ? WHERE user_id = ?",
-    [req.body, req.body.user_id],
+    [req.body, req.user.user_id],
     (err, res) => {
       if (err) {
         console.log("error", err);
@@ -1882,14 +1882,14 @@ exports.edit_flash_sale_promotion = (req, result) => {
         if (serviceId) {
           db.query(
             "DELETE FROM tbl_service_promotion WHERE user_id = ? AND type_id = 1",
-            [req.body.user_id],
+            [req.user.user_id],
             (err, res1) => {
               if (err) {
                 console.log("error", err);
               } else {
                 db.query(
                   "SELECT promotion_id FROM tbl_promotion WHERE user_id = ? AND type_id = 1",
-                  [req.body.user_id],
+                  [req.user.user_id],
                   (err, res2) => {
                     if (err) {
                       console.log("error", err);
@@ -1901,7 +1901,7 @@ exports.edit_flash_sale_promotion = (req, result) => {
                       s_id.forEach((e, i) => {
                         db.query(
                           "INSERT INTO tbl_service_promotion(promotion_id,type_id,service_id,user_id)VALUES(?,1,?,?)",
-                          [res2[0].promotion_id, e, req.body.user_id],
+                          [res2[0].promotion_id, e, req.user.user_id],
                           (err, res3) => {
                             if (err) {
                               console.log("error", err);

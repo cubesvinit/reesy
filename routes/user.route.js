@@ -153,6 +153,17 @@ router.post(
 );
 
 router.post(
+  "/get_map_screen_data",
+  [
+    check("user_id").not().isEmpty().trim().escape(),
+    check("latitude").not().isEmpty().trim().escape(),
+    check("longitude").not().isEmpty().trim().escape(),
+    check("category_id").not().isEmpty().trim().escape(),
+  ],
+  usersController.get_map_screen_data
+);
+
+router.post(
   "/recently_viewed_saloon_data",
   [
     check("user_id").not().isEmpty().trim().escape(),

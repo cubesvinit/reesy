@@ -1245,7 +1245,12 @@ exports.get_main_data = (req, result) => {
         } else {
           var resp = [];
           for (var i = 1; i < res.length; i++) {
-            DeleteKeys(res[i], ["is_category", "is_benefit", "is_gender","new_distance"]);
+            DeleteKeys(res[i], [
+              "is_category",
+              "is_benefit",
+              "is_gender",
+              "new_distance",
+            ]);
             resp.push(res[i]);
           }
           db.query(
@@ -1296,6 +1301,100 @@ exports.get_main_data = (req, result) => {
               }
             }
           );
+        }
+      }
+    }
+  );
+};
+
+exports.get_map_screen_data = (req, result) => {
+  var body = {};
+  var curernt_date = moment().format("YYYY-MM-DD");
+  var search = "";
+  if (req.body.search_text) {
+    search = " AND t1.bussiness_name LIKE '%" + req.body.search_text + "%'";
+  }
+  var WHERE = "";
+  if (req.body.category_id != 0) {
+    WHERE = " AND is_category = 1";
+  }
+  if (req.body.benefit_id) {
+    WHERE += " AND is_benefit = 1";
+  } else {
+    req.body.benefit_id = 0;
+  }
+  if (req.body.gender_id) {
+    WHERE += " AND is_gender = 1";
+  } else {
+    req.body.gender_id = 0;
+  }
+  if (req.body.high_rated) {
+    WHERE += " AND star_count >= 4";
+  }
+  var ORDER = " DESC";
+  if (req.body.sort == 0) {
+    ORDER = " ASC";
+  }
+  db.query(
+    "SELECT t1.user_id,t1.bussiness_name,t1.street_address1,\n\
+    t1.city,t1.zipcode,t1.bussiness_lat,t1.bussiness_long,\n\
+    t1.membership_protection,t1.agreement_protection,IFNULL(t3.is_closed,0)as is_closed,\n\
+    ROUND(IFNULL((SELECT AVG(t4.overall_star) FROM tbl_review t4 WHERE t1.user_id = t4.review_to),0),1)as star_count,\n\
+    (SELECT COUNT(t5.category_id) FROM tbl_provider_service t5 WHERE t5.user_id = t1.user_id AND t5.category_id = " +
+      req.body.category_id +
+      ")as is_category,\n\
+    (SELECT COUNT(t6.benefit_id) FROM tbl_provider_service_benefit t6 WHERE t6.user_id = t1.user_id AND t6.benefit_id IN ('" +
+      req.body.benefit_id +
+      "'))as is_benefit,\n\
+    (SELECT COUNT(t7.gender_id) FROM tbl_provider_service_gender t7 WHERE t7.user_id = t1.user_id AND t7.gender_id IN ('" +
+      req.body.gender_id +
+      "'))as is_gender,\n\
+    (SELECT IF(COUNT(t8.like_id) != 0,1,0) FROM tbl_like_saloon t8 WHERE t8.like_to = t1.user_id AND t8.like_by = " +
+      req.body.user_id +
+      ")as is_like_by_me,\n\
+   (SELECT (t2.image) FROM tbl_workplace_image t2 WHERE t1.user_id = t2.user_id ORDER BY t2.image_id ASC LIMIT 1)as work_image,\n\
+   format(111.111 *\n\
+    DEGREES(ACOS(LEAST(1.0, COS(RADIANS(t1.bussiness_lat))\n\
+         * COS(RADIANS(?))\n\
+         * COS(RADIANS(t1.bussiness_long - ?))\n\
+         + SIN(RADIANS(t1.bussiness_lat))\n\
+         * SIN(RADIANS(?))))), 2) AS new_distance\n\
+   FROM tbl_users t1\n\
+   LEFT JOIN tbl_bussiness_hour t3 ON t3.day = DAYNAME('" +
+      curernt_date +
+      "') AND t3.user_id = t1.user_id\n\
+    WHERE t1.user_role = 'provider' AND t1.is_account_setup = 1  " +
+      search +
+      " HAVING new_distance <= 5000000 " +
+      WHERE +
+      " ORDER BY t1.user_id",
+    [req.body.latitude, req.body.longitude, req.body.latitude],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No data found";
+          body.info = [];
+          result(null, body);
+          return;
+        } else {
+          var resp = [];
+          for (var i = 1; i < res.length; i++) {
+            DeleteKeys(res[i], [
+              "is_category",
+              "is_benefit",
+              "is_gender",
+              "new_distance",
+            ]);
+            resp.push(res[i]);
+            }
+            body.Status = 1;
+            body.Message = "Map Screen data get successful";
+            body.info = resp;
+            result(null, body);
+            return;
         }
       }
     }
@@ -1568,6 +1667,7 @@ exports.get_my_favourite_saloon = (req, result) => {
 
 exports.get_saloon_details = async (req, result) => {
   var body = {};
+  var curernt_date = moment().format("YYYY-MM-DD");
   function mostviewdata() {
     db.query(
       "SELECT * FROM tbl_most_viewed_saloon WHERE view_by = ? AND view_to = ?",
@@ -1614,10 +1714,14 @@ exports.get_saloon_details = async (req, result) => {
 
   db.query(
     "SELECT t1.user_id,t1.bussiness_name,t1.street_address1,\n\
-  t1.city,t1.zipcode,bussiness_lat,t1.bussiness_long,\n\
+  t1.city,t1.zipcode,bussiness_lat,t1.bussiness_long,t3.is_closed,\n\
   (SELECT IF(COUNT(t2.like_id) != 0,1,0) FROM tbl_like_saloon t2 WHERE t2.like_to = t1.user_id AND t2.like_by = ?)as is_like_by_me\n\
-   FROM tbl_users t1 WHERE t1.user_id = ? AND t1.user_role = 'provider'",
-    [req.user.user_id, req.body.user_id],
+   FROM tbl_users t1\n\
+   JOIN tbl_bussiness_hour t3 ON t3.day = DAYNAME('" +
+      curernt_date +
+      "') AND t3.user_id = ?\n\
+    WHERE t1.user_id = ? AND t1.user_role = 'provider'",
+    [req.user.user_id, req.body.user_id, req.body.user_id],
     (err, res) => {
       if (err) {
         console.log("error", err);
