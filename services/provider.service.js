@@ -2251,7 +2251,7 @@ exports.edit_daywise_happy_hour = (req, result) => {
                   serviceId.length == 1 ? [serviceId] : serviceId.split(",");
                 s_id.forEach((e, i) => {
                   db.query(
-                    "INSERT INTO tbl_service_promotion(promotion_id,type,service_id,user_id)VALUES(?,3,?,?)",
+                    "INSERT INTO tbl_service_promotion(promotion_id,type_id,service_id,user_id)VALUES(?,3,?,?)",
                     [req.body.promotion_id, e, req.body.user_id],
                     (err, res3) => {
                       if (err) {
