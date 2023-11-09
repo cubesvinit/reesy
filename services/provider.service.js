@@ -1233,6 +1233,7 @@ exports.delete_staff_member = (req, result) => {
 };
 
 exports.add_provider_amenities = (req, result) => {
+  console.log("add_provider_amenities api called", req.body);
   var body = {};
   var amenityId =
     req.body.amenity_id.length == 1
@@ -1259,6 +1260,7 @@ exports.add_provider_amenities = (req, result) => {
 };
 
 exports.edit_provider_amenities = (req, result) => {
+  console.log("edit_provider_amenities api called", req.body);
   var body = {};
   function getamenities() {
     db.query(
@@ -2399,7 +2401,6 @@ exports.list_upcoming_birthday_client = (req, result) => {
 
 exports.edit_provider_benefit = async (req, result) => {
   var body = {};
-
   if (req.body.gender_id) {
     db.query(
       "DELETE FROM tbl_provider_service_gender WHERE user_id = ?",
