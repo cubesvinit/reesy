@@ -312,6 +312,13 @@ router.post(
 );
 
 router.post(
+  "/delete_daywise_happy_hour",
+  [check("promotion_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.delete_daywise_happy_hour
+);
+
+router.post(
   "/add_client",
   [
     check("first_name").not().isEmpty().trim().escape(),

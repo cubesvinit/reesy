@@ -10,6 +10,7 @@ const async = require("async");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const hee = require("he");
+const { resolveTxt } = require("dns");
 
 function isEmpty(obj) {
   return Object.keys(obj).length === 0;
@@ -946,7 +947,7 @@ exports.edit_daywise_bussiness_hour = (req, result) => {
       } else {
         var breakdata = obj.break.length <= 0 ? [0] : obj.break;
         breakdata.forEach((e, i) => {
-          if (e1 != 0) {
+          if (e != 0) {
             var break_data = {
               user_id: req.user.user_id,
               hour_id: e.hour_id,
@@ -967,7 +968,7 @@ exports.edit_daywise_bussiness_hour = (req, result) => {
             } else {
               db.query(
                 "UPDATE tbl_bussiness_hour_break SET ? WHERE break_id = ?",
-                [break_data, e1.break_id],
+                [break_data, e.break_id],
                 (err, res4) => {
                   if (err) {
                     console.log("error", err);
@@ -2272,6 +2273,34 @@ exports.edit_daywise_happy_hour = (req, result) => {
         } else {
           getdata();
         }
+      }
+    }
+  );
+};
+
+exports.delete_daywise_happy_hour = (req, result) => {
+  var body = {};
+  db.query(
+    "UPDATE tbl_promotion SET start_time = NULL,end_time = NULL,discount = 0 WHERE promotion_id = ?",
+    [req.body.promotion_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        db.query(
+          "DELETE FROM tbl_service_promotion WHERE promotion_id = ?",
+          [req.body.promotion_id],
+          (err, res1) => {
+            if (err) {
+              console.log("error", err);
+            } else {
+              body.Status = 1;
+              body.Message = "Happy hour deleted successfully";
+              result(null, body);
+              return;
+            }
+          }
+        );
       }
     }
   );
