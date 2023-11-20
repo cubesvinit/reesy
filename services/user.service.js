@@ -1252,7 +1252,7 @@ exports.get_main_data = (req, result) => {
               "new_distance",
             ]);
             resp.push(res[i]);
-            if(res.length - 1 == i){
+            if (res.length - 1 == i) {
               db.query(
                 "SELECT t1.user_id,t1.bussiness_name,t1.street_address1,\n\
                 t1.city,t1.zipcode,t1.bussiness_lat,t1.bussiness_long,\n\
@@ -1391,14 +1391,14 @@ exports.get_map_screen_data = (req, result) => {
               "new_distance",
             ]);
             resp.push(res[i]);
-            if(res.length - 1 == i){
+            if (res.length - 1 == i) {
               body.Status = 1;
               body.Message = "Map Screen data get successful";
               body.info = resp;
               result(null, body);
               return;
             }
-            }
+          }
         }
       }
     }
@@ -1870,4 +1870,95 @@ exports.get_saloon_details = async (req, result) => {
       }
     }
   );
+};
+
+exports.get_booking_available_timeslot = (req, result) => {
+  var body = {};
+  var saloon_id = req.body.user_id;
+  var member_id = req.body.member_id;
+  var service_id = req.body.service_id;
+  var booking_date = req.body.booking_date;
+  var info = [
+    {
+      timeslot: "09:00:00",
+    },
+    {
+      timeslot: "10:00:00",
+    },
+    {
+      timeslot: "11:00:00",
+    },
+    {
+      timeslot: "12:00:00",
+    },
+  ];
+  body.Status = 1;
+  body.Message = "Timeslot get successful";
+  body.info = info;
+  result(null, body);
+  return;
+
+  // db.query(
+  //   `SELECT
+  //   t1.*,
+  //   t2.start_time AS member_start_time,
+  //   t2.end_time AS member_end_time,
+  //   t3.service_duration,
+  //   t4.break_start,
+  //   t4.break_end,
+  //   t5.break_start AS member_break_start,
+  //   t5.break_end AS member_break_end,
+  //   t6.start_time as member_off_start_time,t6.end_time as member_off_end_time
+  // FROM
+  //   tbl_bussiness_hour t1
+  // LEFT JOIN
+  //   tbl_member_workshift t2 ON t1.user_id = t2.user_id AND t1.day = t2.day AND t2.member_id = ${member_id}
+  // LEFT JOIN
+  //   tbl_provider_service t3 ON t1.user_id = t3.user_id AND t3.service_id = ${service_id}
+  // LEFT JOIN
+  //   tbl_bussiness_hour_break t4 ON t1.user_id = t4.user_id AND t1.hour_id = t4.hour_id
+  // LEFT JOIN
+  //   tbl_member_workshift_break t5 ON t2.user_id = t5.user_id AND t2.workshift_id = t5.workshift_id
+  //   LEFT JOIN
+  //   tbl_workshift_timeoff t6 ON t1.user_id = t6.user_id AND t6.start_date = ${booking_date}
+  // WHERE
+  //   t1.user_id = ${saloon_id} AND t1.day = DAYNAME(${booking_date}) AND t1.is_closed = 0
+  // GROUP BY
+  //   t1.user_id, t1.hour_id LIMIT 1`
+  // );
+};
+
+exports.add_booking = (req, result) => {
+  var body = {};
+  var booking_data = {
+    booking_by: req.user.user_id,
+    booking_to: req.body.booking_to,
+    booking_date: req.body.booking_date,
+    amount: req.body.amount,
+    taxes_fee: req.body.taxes_fee,
+    redeem_amount: req.body.redeem_amount,
+    total_amount: req.body.total_amount,
+    member_id: req.body.member_id,
+    time_slot: req.body.time_slot,
+  };
+  db.query("INSERT INTO tbl_booking SET ?", [booking_data], (err, res) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      db.query(
+        "INSERT INTO tbl_service_booking(booking_id,user_id,service_id)VALUES(?,?,?)",
+        [res.insertId, booking_data.booking_by, req.body.service_id],
+        (err, res1) => {
+          if (err) {
+            console.log("error", err);
+          } else {
+            body.Status = 1;
+            body.Message = "Booking successful";
+            result(null, body);
+            return;
+          }
+        }
+      );
+    }
+  });
 };

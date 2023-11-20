@@ -196,4 +196,40 @@ router.post(
   usersController.get_saloon_details
 );
 
+router.post(
+  "/get_saloon_details",
+  [check("user_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  usersController.get_saloon_details
+);
+
+router.post(
+  "/get_booking_available_timeslot",
+  [
+    check("saloon_id").not().isEmpty().trim().escape(),
+    check("member_id").not().isEmpty().trim().escape(),
+    check("booking_date").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  usersController.get_booking_available_timeslot
+);
+
+router.post(
+  "/add_booking",
+  [
+    check("booking_to").not().isEmpty().trim().escape(),
+    check("booking_date").not().isEmpty().trim().escape(),
+    check("amount").not().isEmpty().trim().escape(),
+    check("taxes_fee").not().isEmpty().trim().escape(),
+    check("redeem_amount").not().isEmpty().trim().escape(),
+    check("member_id").not().isEmpty().trim().escape(),
+    check("time_slot").not().isEmpty().trim().escape(),
+    check("service_id").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  usersController.add_booking
+);
+
+
+
 module.exports = router;
