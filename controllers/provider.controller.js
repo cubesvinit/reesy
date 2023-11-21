@@ -802,6 +802,20 @@ exports.list_member_workshift = (req, res) => {
   });
 };
 
+exports.edit_member_workshift = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.edit_member_workshift(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
 exports.list_reason = (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

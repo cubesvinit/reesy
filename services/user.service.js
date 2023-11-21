@@ -1952,13 +1952,93 @@ exports.add_booking = (req, result) => {
           if (err) {
             console.log("error", err);
           } else {
-            body.Status = 1;
-            body.Message = "Booking successful";
-            result(null, body);
-            return;
+            db.query(
+              "SELECT * FROM tbl_client WHERE user_id = ? AND client_user_id = ?",
+              [booking_data.booking_to, req.user.user_id],
+              (err, resp) => {
+                if (err) {
+                  console.log("error", err);
+                } else {
+                  if (resp.length <= 0) {
+                    var clientData = {
+                      user_id: booking_data.booking_to,
+                      first_name: req.user.first_name,
+                      last_name: req.user.last_name,
+                      email_id: req.user.email_id,
+                      country_code: req.user.country_code,
+                      iso_code: req.user.iso_code,
+                      phone_number: req.user.phone_number,
+                      date_of_birth: req.user.date_of_birth,
+                      client_user_id: req.user.user_id,
+                    };
+                    db.query(
+                      "INSERT INTO tbl_client SET ?",
+                      [clientData],
+                      (err, resp1) => {
+                        if (err) {
+                          console.log("error", err);
+                        } else {
+                          body.Status = 1;
+                          body.Message = "Booking successful";
+                          result(null, body);
+                          return;
+                        }
+                      }
+                    );
+                  } else {
+                    body.Status = 1;
+                    body.Message = "Booking successful";
+                    result(null, body);
+                    return;
+                  }
+                }
+              }
+            );
           }
         }
       );
     }
   });
+};
+
+exports.get_reservation = (req, result) => {
+  var body = {};
+  var userId = req.user.user_id;
+  db.query(
+    `SELECT t1.*,t2.bussiness_name,t4.service_id,t5.service_name,
+    (SELECT t3.image FROM tbl_workplace_image t3 WHERE t1.booking_to = t3.user_id ORDER BY t3.image_id ASC limit 1)as work_image
+    FROM tbl_booking t1
+    JOIN tbl_users t2 ON t1.booking_to = t2.user_id
+    JOIN tbl_service_booking t4 ON t1.booking_id = t4.booking_id
+    JOIN tbl_provider_service t5 ON t4.service_id = t5.service_id 
+    WHERE t1.booking_status != 3 AND t1.booking_date >= CURRENT_DATE AND t1.booking_by = ${userId}`,
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        db.query(
+          `SELECT t1.*,t2.bussiness_name,
+  (SELECT t3.image FROM tbl_workplace_image t3 WHERE t1.booking_to = t3.user_id ORDER BY t3.image_id ASC limit 1)as work_image
+  FROM tbl_booking t1
+  JOIN tbl_users t2 ON t1.booking_to = t2.user_id
+  WHERE t1.booking_date <= CURRENT_DATE AND t1.booking_by = ${userId}`,
+          (err, res1) => {
+            if (err) {
+              console.log("error", err);
+            } else {
+              body.Status = 1;
+              body.Message = "Reservation get successful";
+              body.upcoming_count = res.length;
+              body.info = {
+                upcoming: res,
+                past: res1,
+              };
+              result(null, body);
+              return;
+            }
+          }
+        );
+      }
+    }
+  );
 };

@@ -222,6 +222,7 @@ router.post(
     check("amount").not().isEmpty().trim().escape(),
     check("taxes_fee").not().isEmpty().trim().escape(),
     check("redeem_amount").not().isEmpty().trim().escape(),
+    check("total_amount").not().isEmpty().trim().escape(),
     check("member_id").not().isEmpty().trim().escape(),
     check("time_slot").not().isEmpty().trim().escape(),
     check("service_id").not().isEmpty().trim().escape(),
@@ -230,6 +231,11 @@ router.post(
   usersController.add_booking
 );
 
-
+router.post(
+  "/get_reservation",
+  [check("booking_to").not().isEmpty().trim().escape()],
+  [authenticate],
+  usersController.get_reservation
+);
 
 module.exports = router;

@@ -400,7 +400,7 @@ exports.account_setup = (req, result) => {
                                                                                             day: e.day,
                                                                                             start_time:
                                                                                               e.start_time,
-                                                                                            end_time:
+                                                                                            close_time:
                                                                                               e.close_time,
                                                                                             is_closed:
                                                                                               e.is_closed,
@@ -2309,16 +2309,52 @@ exports.delete_daywise_happy_hour = (req, result) => {
 exports.add_client = (req, result) => {
   var body = {};
   req.body.user_id = req.user.user_id;
-  db.query("INSERT INTO tbl_client SET ?", [req.body], (err, res) => {
-    if (err) {
-      console.log("error", err);
-    } else {
-      body.Status = 1;
-      body.Message = "Client added successfully";
-      result(null, body);
-      return;
+  db.query(
+    `SELECT t1.* FROM tbl_client t1 WHERE t1.email_id = ?`,
+    [req.body.email_id],
+    (err, resp) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (resp.length <= 0) {
+          db.query(
+            "SELECT user_id FROM tbl_users WHERE email_id = ?",
+            [req.body.email_id],
+            (err, resp1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                if (resp1.length <= 0) {
+                  req.body.client_user_id = 0;
+                } else {
+                  req.body.client_user_id = resp1[0].user_id;
+                }
+                db.query(
+                  "INSERT INTO tbl_client SET ?",
+                  [req.body],
+                  (err, res) => {
+                    if (err) {
+                      console.log("error", err);
+                    } else {
+                      body.Status = 1;
+                      body.Message = "Client added successfully";
+                      result(null, body);
+                      return;
+                    }
+                  }
+                );
+              }
+            }
+          );
+        } else {
+          body.Status = 0;
+          body.Message = "Client with this email already added.";
+          result(null, body);
+          return;
+        }
+      }
     }
-  });
+  );
 };
 
 exports.list_client = (req, result) => {
@@ -2329,23 +2365,26 @@ exports.list_client = (req, result) => {
   var WHERE = "";
   if (req.body.search_text) {
     WHERE =
-      " WHERE (t1.first_name LIKE '%" +
+      " AND (t1.first_name LIKE '%" +
       req.body.search_text +
       "%' OR t1.last_name LIKE '%" +
       req.body.search_text +
       "%')";
   }
   db.query(
-    "SELECT t1.*,\n\
-    (SELECT COUNT(*) FROM tbl_client t1 " +
+    "SELECT t1.*,t2.profile_pic,\n\
+    (SELECT COUNT(*) FROM tbl_client t1 WHERE t1.user_id = ? " +
       WHERE +
       ")as total_data\n\
-     FROM tbl_client t1 " +
+     FROM tbl_client t1\n\
+    LEFT JOIN tbl_users t2 ON t1.client_user_id = t2.user_id\n\
+     WHERE t1.user_id = ? " +
       WHERE +
       " ORDER BY t1.first_name ASC LIMIT " +
       limit +
       " OFFSET " +
       offset,
+    [req.user.user_id, req.user.user_id],
     (err, res) => {
       if (err) {
         console.log("error", err);
@@ -2753,7 +2792,7 @@ exports.edit_workshift = (req, result) => {
       user_id: req.user.user_id,
       member_id: req.body.member_id,
       start_time: obj.start_time,
-      end_time: obj.end_time,
+      close_time: obj.close_time,
       is_closed: obj.is_closed,
     };
     db.query(
@@ -2804,7 +2843,7 @@ exports.edit_workshift = (req, result) => {
                     user_id: req.user.user_id,
                     member_id: req.body.member_id,
                     timeoff_date: e2.timeoff_date,
-                    reason_id: e2.reason_id,
+                    reason_id: e2.reason.reason_id,
                     type: e2.type,
                     start_date: e2.start_date,
                     end_date: e2.end_date,
@@ -2898,29 +2937,103 @@ exports.list_member_workshift = (req, result) => {
       if (err) {
         console.log("error", err);
       } else {
-        res.forEach((e, i) => {
-          db.query(
-            "SELECT * FROM tbl_member_workshift_break WHERE workshift_id = ?",
-            [e.workshift_id],
-            (err, res1) => {
-              if (err) {
-                console.log("error", err);
-              } else {
-                res[i]["break"] = res1;
-                if (res.length - 1 == i) {
-                  body.Status = 1;
-                  body.Message = "Workshift get successful";
-                  body.info = res;
-                  result(null, body);
-                  return;
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No data found";
+          body.info = res;
+          result(null, body);
+          return;
+        } else {
+          res.forEach((e, i) => {
+            db.query(
+              "SELECT * FROM tbl_member_workshift_break WHERE workshift_id = ?",
+              [e.workshift_id],
+              (err, res1) => {
+                if (err) {
+                  console.log("error", err);
+                } else {
+                  res[i]["break"] = res1;
+                  if (res.length - 1 == i) {
+                    body.Status = 1;
+                    body.Message = "Workshift get successful";
+                    body.info = res;
+                    result(null, body);
+                    return;
+                  }
                 }
               }
-            }
-          );
-        });
+            );
+          });
+        }
       }
     }
   );
+};
+
+exports.edit_member_workshift = (req, result) => {
+  var body = {};
+  var obj = JSON.parse(req.body.workshift_data);
+  console.log("obj",obj);
+  obj.forEach((e, i) => {
+    var workshift = {
+      workshift_id: e.workshift_id,
+      user_id: req.user.user_id,
+      member_id: e.member_id,
+      start_time: e.start_time,
+      close_time: e.close_time,
+      is_closed: e.is_closed,
+    };
+    db.query(
+      "UPDATE tbl_member_workshift SET ? WHERE workshift_id = ?",
+      [workshift, workshift.workshift_id],
+      (err, res) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          var breakdata = e.break.length <= 0 ? [0] : e.break;
+          breakdata.forEach((e1, i1) => {
+            if (e1 != 0) {
+              var break_data = {
+                user_id: req.user.user_id,
+                workshift_id: e.workshift_id,
+                break_start: e1.break_start,
+                break_end: e1.break_end,
+              };
+              if (e1.break_id == 0) {
+                //INSERT
+                db.query(
+                  "INSERT INTO tbl_member_workshift_break SET ?",
+                  [break_data],
+                  (err, res1) => {
+                    if (err) {
+                      console.log("error", err);
+                    }
+                  }
+                );
+              } else {
+                //UPDATE
+                db.query(
+                  "UPDATE tbl_member_workshift_break SET ? WHERE break_id = ?",
+                  [break_data, e1.break_id],
+                  (err, res1) => {
+                    if (err) {
+                      console.log("error", err);
+                    }
+                  }
+                );
+              }
+            }
+            if (obj.length - 1 == i && breakdata.length - 1 == i1) {
+              body.Status = 1;
+              body.Message = "Workshift edited successfully";
+              result(null, body);
+              return;
+            }
+          });
+        }
+      }
+    );
+  });
 };
 
 exports.list_reason = (req, result) => {

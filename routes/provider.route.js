@@ -423,6 +423,13 @@ router.post(
 );
 
 router.post(
+  "/edit_member_workshift",
+  [check("member_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.edit_member_workshift
+);
+
+router.post(
   "/list_reason",
   providerController.list_reason
 );
