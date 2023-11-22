@@ -2005,23 +2005,27 @@ exports.get_reservation = (req, result) => {
   var body = {};
   var userId = req.user.user_id;
   db.query(
-    `SELECT t1.*,t2.bussiness_name,t4.service_id,t5.service_name,
+    `SELECT t1.*,t2.bussiness_name,t2.bussiness_lat,t2.bussiness_long,t4.service_id,t5.service_name,t7.first_name,t7.last_name,t7.profile_pic,
     (SELECT t3.image FROM tbl_workplace_image t3 WHERE t1.booking_to = t3.user_id ORDER BY t3.image_id ASC limit 1)as work_image
     FROM tbl_booking t1
     JOIN tbl_users t2 ON t1.booking_to = t2.user_id
     JOIN tbl_service_booking t4 ON t1.booking_id = t4.booking_id
     JOIN tbl_provider_service t5 ON t4.service_id = t5.service_id 
-    WHERE t1.booking_status != 3 AND t1.booking_date >= CURRENT_DATE AND t1.booking_by = ${userId}`,
+    JOIN tbl_users t7 ON t1.member_id = t7.user_id
+    WHERE t1.booking_status IN (0,1) AND t1.booking_date >= CURRENT_DATE AND t1.booking_by = ${userId}`,
     (err, res) => {
       if (err) {
         console.log("error", err);
       } else {
         db.query(
-          `SELECT t1.*,t2.bussiness_name,
+          `SELECT t1.*,t2.bussiness_name,t2.bussiness_lat,t2.bussiness_long,t4.service_id,t5.service_name,t7.first_name,t7.last_name,t7.profile_pic,
   (SELECT t3.image FROM tbl_workplace_image t3 WHERE t1.booking_to = t3.user_id ORDER BY t3.image_id ASC limit 1)as work_image
   FROM tbl_booking t1
   JOIN tbl_users t2 ON t1.booking_to = t2.user_id
-  WHERE t1.booking_date <= CURRENT_DATE AND t1.booking_by = ${userId}`,
+  JOIN tbl_service_booking t4 ON t1.booking_id = t4.booking_id
+  JOIN tbl_provider_service t5 ON t4.service_id = t5.service_id 
+  JOIN tbl_users t7 ON t1.member_id = t7.user_id
+  WHERE (t1.booking_date < CURRENT_DATE AND t1.booking_status IN (2,3)) OR (t1.booking_status IN (2,3)) OR (t1.booking_date < CURRENT_DATE) AND t1.booking_by = ${userId} `,
           (err, res1) => {
             if (err) {
               console.log("error", err);
@@ -2038,6 +2042,24 @@ exports.get_reservation = (req, result) => {
             }
           }
         );
+      }
+    }
+  );
+};
+
+exports.cancle_reservation = (req, result) => {
+  var body = {};
+  db.query(
+    "UPDATE tbl_booking SET booking_status = 3 WHERE booking_id = ?",
+    [req.body.booking_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        body.Status = 1;
+        body.Message = "Reservation cancelled successfully";
+        result(null, body);
+        return;
       }
     }
   );

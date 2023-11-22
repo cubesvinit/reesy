@@ -313,3 +313,17 @@ exports.get_reservation = (req, res) => {
     }
   });
 };
+
+exports.cancle_reservation = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  usersService.cancle_reservation(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};

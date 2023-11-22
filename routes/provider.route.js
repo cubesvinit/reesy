@@ -364,11 +364,9 @@ router.post(
   "/create_checkout",
   [
     check("client_id").not().isEmpty().trim().escape(),
-    check("amount").not().isEmpty().trim().escape(),
-    check("service_id").not().isEmpty().trim().escape(),
     check("discount").not().isEmpty().trim().escape(),
+    check("discount_amount").not().isEmpty().trim().escape(),
     check("total_amount").not().isEmpty().trim().escape(),
-    check("payment_method").not().isEmpty().trim().escape(),
   ],
   [authenticate],
   providerController.create_checkout
@@ -429,10 +427,7 @@ router.post(
   providerController.edit_member_workshift
 );
 
-router.post(
-  "/list_reason",
-  providerController.list_reason
-);
+router.post("/list_reason", providerController.list_reason);
 
 router.post(
   "/get_time_slot",

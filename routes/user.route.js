@@ -233,9 +233,17 @@ router.post(
 
 router.post(
   "/get_reservation",
-  [check("booking_to").not().isEmpty().trim().escape()],
   [authenticate],
   usersController.get_reservation
 );
+
+router.post(
+  "/cancle_reservation",
+  [check("booking_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  usersController.cancle_reservation
+);
+
+
 
 module.exports = router;

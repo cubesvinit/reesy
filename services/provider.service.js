@@ -1774,6 +1774,7 @@ exports.delete_announcement = (req, result) => {
 };
 
 exports.add_flash_sale_promotion = (req, result) => {
+  console.log("add_flash_sale_promotion", req.body);
   var body = {};
   var serviceId = req.body.service_id;
   req.body.user_id = req.user.user_id;
@@ -1830,6 +1831,8 @@ exports.add_flash_sale_promotion = (req, result) => {
 };
 
 exports.edit_flash_sale_promotion = (req, result) => {
+  console.log("edit_flash_sale_promotion", req.body);
+  console.log("edit_flash_sale_promotion", req.user.user_id);
   var body = {};
   function getdata() {
     db.query(
@@ -1876,7 +1879,7 @@ exports.edit_flash_sale_promotion = (req, result) => {
   var serviceId = req.body.service_id;
   DeleteKeys(req.body, ["service_id"]);
   db.query(
-    "UPDATE tbl_promotion SET ? WHERE user_id = ?",
+    "UPDATE tbl_promotion SET ? WHERE user_id = ? AND type_id = 1",
     [req.body, req.user.user_id],
     (err, res) => {
       if (err) {
@@ -2116,6 +2119,7 @@ exports.edit_last_minute_discount = (req, result) => {
 };
 
 exports.get_happy_hour = (req, result) => {
+  console.log("get_happy_hour",req.body);
   var body = {};
   function getdata() {
     db.query(
@@ -2190,6 +2194,8 @@ exports.get_happy_hour = (req, result) => {
 };
 
 exports.edit_daywise_happy_hour = (req, result) => {
+  console.log("edit_daywise_happy_hour",req.body);
+  console.log("edit_daywise_happy_hour",req.user.user_id);
   var body = {};
   function getdata() {
     db.query(
@@ -2293,7 +2299,7 @@ exports.delete_daywise_happy_hour = (req, result) => {
           (err, res1) => {
             if (err) {
               console.log("error", err);
-            } else {
+            }else{
               body.Status = 1;
               body.Message = "Happy hour deleted successfully";
               result(null, body);
@@ -2570,26 +2576,38 @@ exports.edit_provider_benefit = async (req, result) => {
 };
 
 exports.create_checkout = (req, result) => {
+  console.log("create_checkout",req.body);
   var body = {};
-  req.body.booking_by = req.user.user_id;
-  req.body.booking_to = req.body.client_id;
-  req.body.booking_type = 1;
-  var serviceId = req.body.service_id;
-  DeleteKeys(req.body, ["service_id", "client_id"]);
-  db.query("INSERT INTO tbl_booking SET ?", [req.body], (err, res) => {
+  var booking_data = {
+    booking_by: req.body.client_id,
+    booking_to: req.user.user_id,
+    booking_type: 1,
+    booking_date: moment().format("YYYY-MM-DD"),
+    total_amount: req.body.total_amount,
+    payment_method: req.body.payment_method,
+    discount: req.body.discount,
+    discount_amount: req.body.discount_amount,
+  };
+  db.query("INSERT INTO tbl_booking SET ?", [booking_data], (err, res) => {
     if (err) {
       console.log("error", err);
     } else {
-      var sid = serviceId.length == 1 ? [serviceId] : serviceId.split(",");
-      sid.forEach((e, i) => {
+      var obj = JSON.parse(req.body.service_data);
+      console.log("obj",obj);
+      obj.forEach((e, i) => {
         db.query(
-          "INSERT INTO tbl_service_booking(booking_id,user_id,service_id)VALUES(?,?,?)",
-          [res.insertId, req.body.booking_to, e],
+          "INSERT INTO tbl_service_booking(booking_id,user_id,service_id,service_amount)VALUES(?,?,?,?)",
+          [
+            res.insertId,
+            booking_data.booking_by,
+            e.service_id,
+            e.service_amount,
+          ],
           (err, res1) => {
             if (err) {
               console.log("error", err);
             } else {
-              if (sid.length - 1 == i) {
+              if (obj.length - 1 == i) {
                 body.Status = 1;
                 body.Message = "Checkout created successfully";
                 result(null, body);
@@ -2973,7 +2991,7 @@ exports.list_member_workshift = (req, result) => {
 exports.edit_member_workshift = (req, result) => {
   var body = {};
   var obj = JSON.parse(req.body.workshift_data);
-  console.log("obj",obj);
+  console.log("obj", obj);
   obj.forEach((e, i) => {
     var workshift = {
       workshift_id: e.workshift_id,
