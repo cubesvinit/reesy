@@ -221,6 +221,7 @@ router.post(
     check("booking_date").not().isEmpty().trim().escape(),
     check("amount").not().isEmpty().trim().escape(),
     check("taxes_fee").not().isEmpty().trim().escape(),
+    check("ressy_point").not().isEmpty().trim().escape(),
     check("redeem_amount").not().isEmpty().trim().escape(),
     check("total_amount").not().isEmpty().trim().escape(),
     check("member_id").not().isEmpty().trim().escape(),
@@ -229,6 +230,17 @@ router.post(
   ],
   [authenticate],
   usersController.add_booking
+);
+
+router.post(
+  "/make_payment",
+  [
+    check("booking_id").not().isEmpty().trim().escape(),
+    check("is_payment").not().isEmpty().trim().escape(),
+    check("paymentintentid").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  usersController.make_payment
 );
 
 router.post(
@@ -244,6 +256,10 @@ router.post(
   usersController.cancle_reservation
 );
 
-
+router.post(
+  "/get_reesy_point_history",
+  [authenticate],
+  usersController.get_reesy_point_history
+);
 
 module.exports = router;

@@ -830,12 +830,12 @@ exports.list_reason = (req, res) => {
   });
 };
 
-exports.get_time_slot = (req, res) => {
+exports.list_social_post = (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(422).json({ errors: errors.array() });
   }
-  providerService.get_time_slot(req, (err, data) => {
+  providerService.list_social_post(req, (err, data) => {
     if (err) {
       return res.status(400).json(err);
     } else {
@@ -843,3 +843,33 @@ exports.get_time_slot = (req, res) => {
     }
   });
 };
+
+exports.list_social_post_subcategory = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.list_social_post_subcategory(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.list_social_post_subcategory_template = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.list_social_post_subcategory_template(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+

@@ -1830,6 +1830,8 @@ exports.get_saloon_details = async (req, result) => {
                                                               ] = res6;
                                                               res[0]["team"] =
                                                                 res8;
+                                                              body.reesy_point =
+                                                                req.user.user_id;
                                                               body.Status = 1;
                                                               body.Message =
                                                                 "Saloon details get successful";
@@ -1874,29 +1876,50 @@ exports.get_saloon_details = async (req, result) => {
 
 exports.get_booking_available_timeslot = (req, result) => {
   var body = {};
-  var saloon_id = req.body.user_id;
+  var saloon_id = req.body.saloon_id;
   var member_id = req.body.member_id;
   var service_id = req.body.service_id;
   var booking_date = req.body.booking_date;
-  var info = [
-    {
-      timeslot: "09:00:00",
-    },
-    {
-      timeslot: "10:00:00",
-    },
-    {
-      timeslot: "11:00:00",
-    },
-    {
-      timeslot: "12:00:00",
-    },
-  ];
-  body.Status = 1;
-  body.Message = "Timeslot get successful";
-  body.info = info;
-  result(null, body);
-  return;
+  db.query(
+    "SELECT is_closed FROM tbl_bussiness_hour WHERE day = DAYNAME('" +
+      booking_date +
+      "') AND user_id = " +
+      saloon_id +
+      "",
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res[0].is_closed == 0) {
+          var info = [
+            {
+              timeslot: "09:00:00",
+            },
+            {
+              timeslot: "10:00:00",
+            },
+            {
+              timeslot: "11:00:00",
+            },
+            {
+              timeslot: "12:00:00",
+            },
+          ];
+          body.Status = 1;
+          body.Message = "Timeslot get successful";
+          body.info = info;
+          result(null, body);
+          return;
+        } else {
+          body.Status = 0;
+          body.Message =
+            "We regret to inform you that the salon is closed on the date you selected for booking. Kindly choose another date for your appointment";
+          result(null, body);
+          return;
+        }
+      }
+    }
+  );
 
   // db.query(
   //   `SELECT
@@ -1936,6 +1959,7 @@ exports.add_booking = (req, result) => {
     booking_date: req.body.booking_date,
     amount: req.body.amount,
     taxes_fee: req.body.taxes_fee,
+    reesy_point: req.body.reesy_point,
     redeem_amount: req.body.redeem_amount,
     total_amount: req.body.total_amount,
     member_id: req.body.member_id,
@@ -1980,6 +2004,7 @@ exports.add_booking = (req, result) => {
                         } else {
                           body.Status = 1;
                           body.Message = "Booking successful";
+                          body.booking_id = res.insertId;
                           result(null, body);
                           return;
                         }
@@ -1988,6 +2013,7 @@ exports.add_booking = (req, result) => {
                   } else {
                     body.Status = 1;
                     body.Message = "Booking successful";
+                    body.booking_id = res.insertId;
                     result(null, body);
                     return;
                   }
@@ -1999,6 +2025,253 @@ exports.add_booking = (req, result) => {
       );
     }
   });
+};
+
+exports.make_payment = (req, result) => {
+  var body = {};
+  //is_payment == 1 ? success : fail
+  if ((req.body.is_payment = 1)) {
+    //only card or cash
+    db.query(
+      "SELECT * FROM tbl_booking WHERE booking_id = ?",
+      [req.body.booking_id],
+      (err, res) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          if (res.length <= 0) {
+            body.Status = 0;
+            body.Message = "Booking not found";
+            result(null, body);
+            return;
+          } else {
+            if (
+              res[0].reesy_point == 0 &&
+              parseInt(res[0].redeem_amount) == 0 &&
+              parseInt(res[0].total_amount) != 0
+            ) {
+              var transactionData = {
+                transaction_by: req.user.user_id,
+                transaction_to: res[0].booking_to,
+                charge_id: req.body.paymentintentid,
+                booking_id: req.body.booking_id,
+                transaction_amount: res[0].total_amount,
+                payment_method: 1,
+                transaction_type: 0,
+              };
+              db.query(
+                "INSERT INTO tbl_transaction SET ?",
+                [transactionData],
+                (err, res1) => {
+                  if (err) {
+                    console.log("error", err);
+                  } else {
+                    db.query(
+                      "UPDATE tbl_booking SET transaction_id = ? WHERE booking_id = ?",
+                      [res1.insertId, req.body.booking_id],
+                      (err, res2) => {
+                        if (err) {
+                          console.log("error", err);
+                        } else {
+                          db.query(
+                            "UPDATE tbl_users SET reesy_point = reesy_point + 10 WHERE user_id = ?",
+                            [req.user.user_id],
+                            (err, res3) => {
+                              if (err) {
+                                console.log("error", err);
+                              } else {
+                                db.query(
+                                  "INSERT INTO tbl_user_reesy_point(user_id,booking_id,reesy_point)VALUES(?,?,?)",
+                                  [req.user.user_id, req.body.booking_id, 10],
+                                  (err, res4) => {
+                                    if (err) {
+                                      console.log("error", err);
+                                    } else {
+                                      body.Status = 1;
+                                      body.Message = "Payment Success";
+                                      result(null, body);
+                                      return;
+                                    }
+                                  }
+                                );
+                              }
+                            }
+                          );
+                        }
+                      }
+                    );
+                  }
+                }
+              );
+            } else if (
+              res[0].reesy_point != 0 &&
+              parseInt(res[0].redeem_amount) != 0 &&
+              parseInt(res[0].total_amount) != 0
+            ) {
+              //card or cash with redeem point
+              var transactionData = {
+                transaction_by: req.user.user_id,
+                transaction_to: res[0].booking_to,
+                charge_id: req.body.paymentintentid,
+                booking_id: req.body.booking_id,
+                transaction_amount: res[0].total_amount,
+                payment_method: 1,
+                transaction_type: 0,
+              };
+              db.query(
+                "INSERT INTO tbl_transaction SET ?",
+                [transactionData],
+                (err, res1) => {
+                  if (err) {
+                    console.log("error", err);
+                  } else {
+                    db.query(
+                      "UPDATE tbl_booking SET transaction_id = ? WHERE booking_id = ?",
+                      [res1.insertId, req.body.booking_id],
+                      (err, res2) => {
+                        if (err) {
+                          console.log("error", err);
+                        } else {
+                          db.query(
+                            "UPDATE tbl_users SET reesy_point = reesy_point + 10,reesy_point = reesy_point - ? WHERE user_id = ?",
+                            [res[0].reesy_point, req.user.user_id],
+                            (err, res3) => {
+                              if (err) {
+                                console.log("error", err);
+                              } else {
+                                db.query(
+                                  "INSERT INTO tbl_user_reesy_point(user_id,booking_id,reesy_point)VALUES(?,?,?)",
+                                  [req.user.user_id, req.body.booking_id, 10],
+                                  (err, res4) => {
+                                    if (err) {
+                                      console.log("error", err);
+                                    } else {
+                                      db.query(
+                                        "INSERT INTO tbl_user_reesy_point(user_id,booking_id,reesy_point,is_credit)VALUES(?,?,?,1)",
+                                        [
+                                          req.user.user_id,
+                                          req.body.booking_id,
+                                          res[0].reesy_point,
+                                          10,
+                                        ],
+                                        (err, res5) => {
+                                          if (err) {
+                                            console.log("error", err);
+                                          } else {
+                                            body.Status = 1;
+                                            body.Message = "Payment Success";
+                                            result(null, body);
+                                            return;
+                                          }
+                                        }
+                                      );
+                                    }
+                                  }
+                                );
+                              }
+                            }
+                          );
+                        }
+                      }
+                    );
+                  }
+                }
+              );
+            } else {
+              //only redeem point
+              var transactionData = {
+                transaction_by: req.user.user_id,
+                transaction_to: res[0].booking_to,
+                charge_id: "RESSYPOINT",
+                booking_id: req.body.booking_id,
+                transaction_amount: res[0].redeem_amount,
+                payment_method: 2,
+                transaction_type: 0,
+              };
+              db.query(
+                "INSERT INTO tbl_transaction SET ?",
+                [transactionData],
+                (err, res1) => {
+                  if (err) {
+                    console.log("error", err);
+                  } else {
+                    db.query(
+                      "UPDATE tbl_booking SET transaction_id = ? WHERE booking_id = ?",
+                      [res1.insertId, req.body.booking_id],
+                      (err, res2) => {
+                        if (err) {
+                          console.log("error", err);
+                        } else {
+                          db.query(
+                            "UPDATE tbl_users SET reesy_point = reesy_point + 10,IF(reesy_point = reesy_point - ?) < 0,0,reesy_point = reesy_point - ? WHERE user_id = ?",
+                            [
+                              res[0].reesy_point,
+                              res[0].reesy_point,
+                              req.user.user_id,
+                            ],
+                            (err, res3) => {
+                              if (err) {
+                                console.log("error", err);
+                              } else {
+                                db.query(
+                                  "INSERT INTO tbl_user_reesy_point(user_id,booking_id,reesy_point)VALUES(?,?,?)",
+                                  [req.user.user_id, req.body.booking_id, 10],
+                                  (err, res4) => {
+                                    if (err) {
+                                      console.log("error", err);
+                                    } else {
+                                      db.query(
+                                        "INSERT INTO tbl_user_reesy_point(user_id,booking_id,reesy_point,is_credit)VALUES(?,?,?,1)",
+                                        [
+                                          req.user.user_id,
+                                          req.body.booking_id,
+                                          res[0].reesy_point,
+                                          10,
+                                        ],
+                                        (err, res5) => {
+                                          if (err) {
+                                            console.log("error", err);
+                                          } else {
+                                            body.Status = 1;
+                                            body.Message = "Payment Success";
+                                            result(null, body);
+                                            return;
+                                          }
+                                        }
+                                      );
+                                    }
+                                  }
+                                );
+                              }
+                            }
+                          );
+                        }
+                      }
+                    );
+                  }
+                }
+              );
+            }
+          }
+        }
+      }
+    );
+  } else {
+    db.query(
+      "DELETE FROM tbl_booking WHERE booking_id = ?",
+      [req.body.booking_id],
+      (err, res) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          body.Status = 1;
+          body.Message = "Payment failed";
+          result(null, body);
+          return;
+        }
+      }
+    );
+  }
 };
 
 exports.get_reservation = (req, result) => {
@@ -2060,6 +2333,44 @@ exports.cancle_reservation = (req, result) => {
         body.Message = "Reservation cancelled successfully";
         result(null, body);
         return;
+      }
+    }
+  );
+};
+
+exports.get_reesy_point_history = (req, result) => {
+  var body = {};
+  const limit = 10;
+  const page_no = req.body.page_no;
+  const offset = (page_no - 1) * limit;
+  db.query(
+    "SELECT t1.*,\n\
+    (SELECT COUNT(*) FROM tbl_user_reesy_point t1 WHERE t1.user_id = ?)as total_data\n\
+     FROM tbl_user_reesy_point t1 WHERE t1.user_id = ? ORDER BY t1.reesy_point_id DESC LIMIT " +
+      limit +
+      " OFFSET " +
+      offset +
+      "",
+    [req.user.user_id, req.user.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No History Found";
+          body.total_page = 0;
+          body.info = res;
+          result(null, body);
+          return;
+        } else {
+          body.Status = 1;
+          body.Message = "History get successful";
+          body.total_page = Math.ceil(res[0].total_data / limit);
+          body.info = res;
+          result(null, body);
+          return;
+        }
       }
     }
   );

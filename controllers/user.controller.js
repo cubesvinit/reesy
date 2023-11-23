@@ -300,6 +300,20 @@ exports.add_booking = (req, res) => {
   });
 };
 
+exports.make_payment = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  usersService.make_payment(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
 exports.get_reservation = (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -320,6 +334,20 @@ exports.cancle_reservation = (req, res) => {
     return res.status(422).json({ errors: errors.array() });
   }
   usersService.cancle_reservation(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.get_reesy_point_history = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  usersService.get_reesy_point_history(req, (err, data) => {
     if (err) {
       return res.status(400).json(err);
     } else {

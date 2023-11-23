@@ -1047,7 +1047,7 @@ exports.add_staff_member = (req, result) => {
                       member_id: res.insertId,
                       day: e2.day,
                       start_time: e2.start_time,
-                      end_time: e2.close_time,
+                      close_time: e2.close_time,
                       is_closed: e2.is_closed,
                     };
                     db.query(
@@ -1579,6 +1579,34 @@ exports.list_promote_plan = (req, result) => {
 };
 
 exports.list_promotion = (req, result) => {
+`SELECT t1.type_id,t1.promotion_type,t1.promotion_description,
+t3.promotion_id,t3.user_id,t3.discount,t3.time_period,t3.booking_window_hour,t3.start_time,t3.end_time,t3.day,t3.created_at,
+(SELECT COUNT(*) FROM tbl_booking t2 WHERE t1.type_id = t2.type_id AND t2.booking_status = 2 AND t2.booking_to = 112)as total_appoinment,
+IFNULL((SELECT SUM(t2.total_amount) FROM tbl_booking t2 WHERE t1.type_id = t2.type_id AND t2.booking_status = 2 AND t2.booking_to = 112),0)as total_profit,
+(
+      SELECT 
+          CASE 
+              WHEN EXISTS (
+                  SELECT 1 
+                  FROM tbl_promotion t4 
+                  WHERE DATE_FORMAT(t4.created_at,'%Y-%m-%d') BETWEEN CURRENT_DATE AND DATE_FORMAT(DATE_ADD(t4.created_at,INTERVAL 7 DAY),'%Y-%m-%d') AND t4.time_period != 0 AND t4.discount != 0
+              ) THEN 1
+              WHEN EXISTS (
+                  SELECT 1 
+                  FROM tbl_promotion t4 
+                  WHERE DATE_FORMAT(t4.created_at,'%Y-%m-%d') = CURRENT_DATE AND t4.booking_window_hour != 0 AND t4.discount != 0
+              ) THEN 2
+      WHEN EXISTS (
+                  SELECT 1 
+                  FROM tbl_promotion t4
+                  WHERE t3.day = DAYNAME(CURRENT_DATE) AND t4.discount != 0 AND t4.start_time != 'null' AND t4.end_time != 'null'
+              ) THEN 3
+              ELSE 0
+          END
+  ) as is_acttive
+FROM tbl_promotion_type t1
+LEFT JOIN tbl_promotion t3 ON t3.user_id = 112 AND IF(t1.type_id = t3.type_id AND t3.type_id = 3,t3.day = DAYNAME('2023-11-22'),t1.type_id = t3.type_id) GROUP BY t1.type_id;`
+
   var body = {};
   var currentDate = moment().format("YYYY-MM-DD");
   db.query(
@@ -1943,7 +1971,7 @@ exports.delete_promotion = (req, result) => {
         console.log("error", err);
       } else {
         db.query(
-          "DELETE FROM tbl_service_promotion WHERE promotion_id",
+          "DELETE FROM tbl_service_promotion WHERE promotion_id = ?",
           [req.body.promotion_id],
           (err, res1) => {
             if (err) {
@@ -2119,7 +2147,7 @@ exports.edit_last_minute_discount = (req, result) => {
 };
 
 exports.get_happy_hour = (req, result) => {
-  console.log("get_happy_hour",req.body);
+  console.log("get_happy_hour", req.body);
   var body = {};
   function getdata() {
     db.query(
@@ -2194,8 +2222,8 @@ exports.get_happy_hour = (req, result) => {
 };
 
 exports.edit_daywise_happy_hour = (req, result) => {
-  console.log("edit_daywise_happy_hour",req.body);
-  console.log("edit_daywise_happy_hour",req.user.user_id);
+  console.log("edit_daywise_happy_hour", req.body);
+  console.log("edit_daywise_happy_hour", req.user.user_id);
   var body = {};
   function getdata() {
     db.query(
@@ -2299,7 +2327,7 @@ exports.delete_daywise_happy_hour = (req, result) => {
           (err, res1) => {
             if (err) {
               console.log("error", err);
-            }else{
+            } else {
               body.Status = 1;
               body.Message = "Happy hour deleted successfully";
               result(null, body);
@@ -2576,7 +2604,7 @@ exports.edit_provider_benefit = async (req, result) => {
 };
 
 exports.create_checkout = (req, result) => {
-  console.log("create_checkout",req.body);
+  console.log("create_checkout", req.body);
   var body = {};
   var booking_data = {
     booking_by: req.body.client_id,
@@ -2593,7 +2621,7 @@ exports.create_checkout = (req, result) => {
       console.log("error", err);
     } else {
       var obj = JSON.parse(req.body.service_data);
-      console.log("obj",obj);
+      console.log("obj", obj);
       obj.forEach((e, i) => {
         db.query(
           "INSERT INTO tbl_service_booking(booking_id,user_id,service_id,service_amount)VALUES(?,?,?,?)",
@@ -2684,7 +2712,7 @@ exports.add_workshift = (req, result) => {
     member_id: req.body.member_id,
     shift_date: req.body.calender_date,
     start_time: obj.start_time,
-    end_time: obj.end_time,
+    close_time: obj.close_time,
   };
   db.query(
     "INSERT INTO tbl_member_workshift SET ?",
@@ -3069,7 +3097,55 @@ exports.list_reason = (req, result) => {
   });
 };
 
-exports.get_time_slot = (req, result) => {
+exports.list_social_post = (req, result) => {
   var body = {};
-  db.query("");
+  db.query("SELECT * FROM tbl_social_post_category", (err, res) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      body.Status = 1;
+      body.Message = "Social Post get successful";
+      body.info = res;
+      result(null, body);
+      return;
+    }
+  });
+};
+
+exports.list_social_post_subcategory = (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT * FROM tbl_social_post_subcategory WHERE category_id = ?",
+    [req.body.category_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        body.Status = 1;
+        body.Message = "Social Post category get successful";
+        body.info = res;
+        result(null, body);
+        return;
+      }
+    }
+  );
+};
+
+exports.list_social_post_subcategory_template = (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT * FROM tbl_social_post_subcategory_template WHERE subcategory_id = ?",
+    [req.body.subcategory_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        body.Status = 1;
+        body.Message = "Social Post category get successful";
+        body.info = res;
+        result(null, body);
+        return;
+      }
+    }
+  );
 };

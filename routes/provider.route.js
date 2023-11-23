@@ -430,13 +430,24 @@ router.post(
 router.post("/list_reason", providerController.list_reason);
 
 router.post(
-  "/get_time_slot",
-  [
-    check("member_id").not().isEmpty().trim().escape(),
-    check("booking_date").not().isEmpty().trim().escape(),
-  ],
+  "/list_social_post",
   [authenticate],
-  providerController.get_time_slot
+  providerController.list_social_post
 );
+
+router.post(
+  "/list_social_post_subcategory",
+  [check("category_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.list_social_post_subcategory
+);
+
+router.post(
+  "/list_social_post_subcategory_template",
+  [check("subcategory_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.list_social_post_subcategory_template
+);
+
 
 module.exports = router;
