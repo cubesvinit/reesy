@@ -367,6 +367,7 @@ router.post(
     check("discount").not().isEmpty().trim().escape(),
     check("discount_amount").not().isEmpty().trim().escape(),
     check("total_amount").not().isEmpty().trim().escape(),
+    check("total_custom_amount").not().isEmpty().trim().escape(),
   ],
   [authenticate],
   providerController.create_checkout
@@ -425,6 +426,13 @@ router.post(
   [check("member_id").not().isEmpty().trim().escape()],
   [authenticate],
   providerController.edit_member_workshift
+);
+
+router.post(
+  "/delete_member_workshift_break",
+  [check("break_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.delete_member_workshift_break
 );
 
 router.post("/list_reason", providerController.list_reason);

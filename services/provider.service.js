@@ -1579,7 +1579,7 @@ exports.list_promote_plan = (req, result) => {
 };
 
 exports.list_promotion = (req, result) => {
-`SELECT t1.type_id,t1.promotion_type,t1.promotion_description,
+  `SELECT t1.type_id,t1.promotion_type,t1.promotion_description,
 t3.promotion_id,t3.user_id,t3.discount,t3.time_period,t3.booking_window_hour,t3.start_time,t3.end_time,t3.day,t3.created_at,
 (SELECT COUNT(*) FROM tbl_booking t2 WHERE t1.type_id = t2.type_id AND t2.booking_status = 2 AND t2.booking_to = 112)as total_appoinment,
 IFNULL((SELECT SUM(t2.total_amount) FROM tbl_booking t2 WHERE t1.type_id = t2.type_id AND t2.booking_status = 2 AND t2.booking_to = 112),0)as total_profit,
@@ -1605,7 +1605,7 @@ IFNULL((SELECT SUM(t2.total_amount) FROM tbl_booking t2 WHERE t1.type_id = t2.ty
           END
   ) as is_acttive
 FROM tbl_promotion_type t1
-LEFT JOIN tbl_promotion t3 ON t3.user_id = 112 AND IF(t1.type_id = t3.type_id AND t3.type_id = 3,t3.day = DAYNAME('2023-11-22'),t1.type_id = t3.type_id) GROUP BY t1.type_id;`
+LEFT JOIN tbl_promotion t3 ON t3.user_id = 112 AND IF(t1.type_id = t3.type_id AND t3.type_id = 3,t3.day = DAYNAME('2023-11-22'),t1.type_id = t3.type_id) GROUP BY t1.type_id;`;
 
   var body = {};
   var currentDate = moment().format("YYYY-MM-DD");
@@ -2615,36 +2615,46 @@ exports.create_checkout = (req, result) => {
     payment_method: req.body.payment_method,
     discount: req.body.discount,
     discount_amount: req.body.discount_amount,
+    total_custom_amount: req.body.total_custom_amount,
   };
   db.query("INSERT INTO tbl_booking SET ?", [booking_data], (err, res) => {
     if (err) {
       console.log("error", err);
     } else {
-      var obj = JSON.parse(req.body.service_data);
-      console.log("obj", obj);
-      obj.forEach((e, i) => {
-        db.query(
-          "INSERT INTO tbl_service_booking(booking_id,user_id,service_id,service_amount)VALUES(?,?,?,?)",
-          [
-            res.insertId,
-            booking_data.booking_by,
-            e.service_id,
-            e.service_amount,
-          ],
-          (err, res1) => {
-            if (err) {
-              console.log("error", err);
-            } else {
-              if (obj.length - 1 == i) {
-                body.Status = 1;
-                body.Message = "Checkout created successfully";
-                result(null, body);
-                return;
+      if (req.body.service_data) {
+        var obj = JSON.parse(req.body.service_data);
+        console.log("obj", obj);
+        obj.forEach((e, i) => {
+          db.query(
+            "INSERT INTO tbl_service_booking(booking_id,user_id,service_id,service_amount)VALUES(?,?,?,?)",
+            [
+              res.insertId,
+              booking_data.booking_by,
+              e.service_id,
+              e.service_amount,
+            ],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                if (obj.length - 1 == i) {
+                  body.Status = 1;
+                  body.Message = "Checkout created successfully";
+                  body.booking_id = res.insertId;
+                  result(null, body);
+                  return;
+                }
               }
             }
-          }
-        );
-      });
+          );
+        });
+      } else {
+        body.Status = 1;
+        body.Message = "Checkout created successfully";
+        body.booking_id = res.insertId;
+        result(null, body);
+        return;
+      }
     }
   });
 };
@@ -3080,6 +3090,26 @@ exports.edit_member_workshift = (req, result) => {
       }
     );
   });
+};
+
+exports.delete_member_workshift_break = (req, result) => {
+  var body = {};
+  db.query(
+    "DELETE FROM tbl_member_workshift_break WHERE break_id = ?",
+    [req.body.break_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+        result(err, null);
+        return;
+      } else {
+        body.Status = 1;
+        body.Message = "Break deleted successful";
+        result(null, body);
+        return;
+      }
+    }
+  );
 };
 
 exports.list_reason = (req, result) => {

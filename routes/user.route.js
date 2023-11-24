@@ -221,7 +221,7 @@ router.post(
     check("booking_date").not().isEmpty().trim().escape(),
     check("amount").not().isEmpty().trim().escape(),
     check("taxes_fee").not().isEmpty().trim().escape(),
-    check("ressy_point").not().isEmpty().trim().escape(),
+    check("reesy_point").not().isEmpty().trim().escape(),
     check("redeem_amount").not().isEmpty().trim().escape(),
     check("total_amount").not().isEmpty().trim().escape(),
     check("member_id").not().isEmpty().trim().escape(),

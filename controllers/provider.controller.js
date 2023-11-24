@@ -816,6 +816,20 @@ exports.edit_member_workshift = (req, res) => {
   });
 };
 
+exports.delete_member_workshift_break = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.delete_member_workshift_break(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
 exports.list_reason = (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

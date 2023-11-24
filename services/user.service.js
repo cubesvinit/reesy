@@ -1831,7 +1831,7 @@ exports.get_saloon_details = async (req, result) => {
                                                               res[0]["team"] =
                                                                 res8;
                                                               body.reesy_point =
-                                                                req.user.user_id;
+                                                                req.user.reesy_point;
                                                               body.Status = 1;
                                                               body.Message =
                                                                 "Saloon details get successful";
@@ -2045,11 +2045,15 @@ exports.make_payment = (req, result) => {
             result(null, body);
             return;
           } else {
+            console.log("res[0].reesy_point",res[0].reesy_point);
+            console.log("res[0].redeem_amount",parseFloat(res[0].redeem_amount));
+            console.log("res[0].total_amount",parseFloat(res[0].total_amount));
             if (
               res[0].reesy_point == 0 &&
-              parseInt(res[0].redeem_amount) == 0 &&
-              parseInt(res[0].total_amount) != 0
+              parseFloat(res[0].redeem_amount) == 0 &&
+              parseFloat(res[0].total_amount) != 0
             ) {
+              console.log("if");
               var transactionData = {
                 transaction_by: req.user.user_id,
                 transaction_to: res[0].booking_to,
@@ -2105,9 +2109,10 @@ exports.make_payment = (req, result) => {
               );
             } else if (
               res[0].reesy_point != 0 &&
-              parseInt(res[0].redeem_amount) != 0 &&
-              parseInt(res[0].total_amount) != 0
+              parseFloat(res[0].redeem_amount) != 0 &&
+              parseFloat(res[0].total_amount) != 0
             ) {
+              console.log("else if");
               //card or cash with redeem point
               var transactionData = {
                 transaction_by: req.user.user_id,
@@ -2133,8 +2138,8 @@ exports.make_payment = (req, result) => {
                           console.log("error", err);
                         } else {
                           db.query(
-                            "UPDATE tbl_users SET reesy_point = reesy_point + 10,reesy_point = reesy_point - ? WHERE user_id = ?",
-                            [res[0].reesy_point, req.user.user_id],
+                            "UPDATE tbl_users SET reesy_point = reesy_point + 10,reesy_point = IF((reesy_point - ?) < 0,0,(reesy_point = reesy_point - ?)) WHERE user_id = ?",
+                            [res[0].reesy_point,res[0].reesy_point,req.user.user_id],
                             (err, res3) => {
                               if (err) {
                                 console.log("error", err);
@@ -2178,6 +2183,7 @@ exports.make_payment = (req, result) => {
                 }
               );
             } else {
+              console.log("else");
               //only redeem point
               var transactionData = {
                 transaction_by: req.user.user_id,
@@ -2203,7 +2209,7 @@ exports.make_payment = (req, result) => {
                           console.log("error", err);
                         } else {
                           db.query(
-                            "UPDATE tbl_users SET reesy_point = reesy_point + 10,IF(reesy_point = reesy_point - ?) < 0,0,reesy_point = reesy_point - ? WHERE user_id = ?",
+                            "UPDATE tbl_users SET  reesy_point = reesy_point + 10,reesy_point = IF((reesy_point - ?) < 0,0,(reesy_point = reesy_point - ?)) WHERE user_id = ?",
                             [
                               res[0].reesy_point,
                               res[0].reesy_point,
