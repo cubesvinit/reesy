@@ -451,11 +451,37 @@ router.post(
 );
 
 router.post(
-  "/list_social_post_subcategory_template",
+  "/list_social_post_subcategory_templatestring",
   [check("subcategory_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.list_social_post_subcategory_templatestring
+);
+
+router.post(
+  "/list_social_post_subcategory_template",
+  [check("templatestring_id").not().isEmpty().trim().escape()],
   [authenticate],
   providerController.list_social_post_subcategory_template
 );
 
+router.post(
+  "/create_socialpost",
+  upload.fields([{ name: "post", maxCount: 1 }]),
+  [check("template_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.create_socialpost
+);
+
+router.post(
+  "/list_message_blast",
+  [authenticate],
+  providerController.list_message_blast
+);
+
+router.post(
+  "/list_marketing",
+  [authenticate],
+  providerController.list_marketing
+);
 
 module.exports = router;

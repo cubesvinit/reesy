@@ -872,6 +872,23 @@ exports.list_social_post_subcategory = (req, res) => {
   });
 };
 
+exports.list_social_post_subcategory_templatestring = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.list_social_post_subcategory_templatestring(
+    req,
+    (err, data) => {
+      if (err) {
+        return res.status(400).json(err);
+      } else {
+        return res.status(200).json(data);
+      }
+    }
+  );
+};
+
 exports.list_social_post_subcategory_template = (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -886,4 +903,61 @@ exports.list_social_post_subcategory_template = (req, res) => {
   });
 };
 
+exports.create_socialpost = (req, res) => {
+  const errors = validationResult(req);
+  var err = errors.array();
+  var validateobj = {
+    msg: "Invalid value",
+    param: "post",
+    location: "body",
+  };
+  if (
+    !errors.isEmpty() ||
+    req.files == undefined ||
+    isEmpty(req.files)
+  ) {
+    if (!errors.isEmpty() && req.files == undefined) {
+      err.push(validateobj);
+    } else if (errors.isEmpty() && req.files.post == undefined) {
+      err.push(validateobj);
+    } else if (!errors.isEmpty() && req.files.post != undefined) {
+      fs.unlinkSync(req.files.post);
+    }
+    return res.status(422).json({ errors: err });
+  }
+  providerService.create_socialpost(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
 
+exports.list_message_blast = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.list_message_blast(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.list_marketing = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.list_marketing(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};

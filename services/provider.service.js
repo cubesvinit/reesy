@@ -1579,45 +1579,35 @@ exports.list_promote_plan = (req, result) => {
 };
 
 exports.list_promotion = (req, result) => {
-  `SELECT t1.type_id,t1.promotion_type,t1.promotion_description,
-t3.promotion_id,t3.user_id,t3.discount,t3.time_period,t3.booking_window_hour,t3.start_time,t3.end_time,t3.day,t3.created_at,
-(SELECT COUNT(*) FROM tbl_booking t2 WHERE t1.type_id = t2.type_id AND t2.booking_status = 2 AND t2.booking_to = 112)as total_appoinment,
-IFNULL((SELECT SUM(t2.total_amount) FROM tbl_booking t2 WHERE t1.type_id = t2.type_id AND t2.booking_status = 2 AND t2.booking_to = 112),0)as total_profit,
-(
-      SELECT 
-          CASE 
-              WHEN EXISTS (
-                  SELECT 1 
-                  FROM tbl_promotion t4 
-                  WHERE DATE_FORMAT(t4.created_at,'%Y-%m-%d') BETWEEN CURRENT_DATE AND DATE_FORMAT(DATE_ADD(t4.created_at,INTERVAL 7 DAY),'%Y-%m-%d') AND t4.time_period != 0 AND t4.discount != 0
-              ) THEN 1
-              WHEN EXISTS (
-                  SELECT 1 
-                  FROM tbl_promotion t4 
-                  WHERE DATE_FORMAT(t4.created_at,'%Y-%m-%d') = CURRENT_DATE AND t4.booking_window_hour != 0 AND t4.discount != 0
-              ) THEN 2
-      WHEN EXISTS (
-                  SELECT 1 
-                  FROM tbl_promotion t4
-                  WHERE t3.day = DAYNAME(CURRENT_DATE) AND t4.discount != 0 AND t4.start_time != 'null' AND t4.end_time != 'null'
-              ) THEN 3
-              ELSE 0
-          END
-  ) as is_acttive
-FROM tbl_promotion_type t1
-LEFT JOIN tbl_promotion t3 ON t3.user_id = 112 AND IF(t1.type_id = t3.type_id AND t3.type_id = 3,t3.day = DAYNAME('2023-11-22'),t1.type_id = t3.type_id) GROUP BY t1.type_id;`;
-
   var body = {};
-  var currentDate = moment().format("YYYY-MM-DD");
   db.query(
     "SELECT t1.type_id,t1.promotion_type,t1.promotion_description,\n\
-  t3.promotion_id,t3.user_id,t3.discount,t3.time_period,t3.booking_window_hour,t3.start_time,t3.end_time,t3.day,t3.created_at,\n\
-  (SELECT COUNT(*) FROM tbl_booking t2 WHERE t1.type_id = t2.type_id AND t2.booking_status = 2 AND t2.booking_to = ?)as total_appoinment,\n\
-  IFNULL((SELECT SUM(t2.total_amount) FROM tbl_booking t2 WHERE t1.type_id = t2.type_id AND t2.booking_status = 2 AND t2.booking_to = ?),0)as total_profit\n\
-  FROM tbl_promotion_type t1\n\
-  LEFT JOIN tbl_promotion t3 ON t3.user_id = ? AND IF(t1.type_id = t3.type_id AND t3.type_id = 3,t3.day = DAYNAME('" +
-      currentDate +
-      "'),t1.type_id = t3.type_id) GROUP BY t1.type_id",
+    t3.promotion_id,t3.user_id,t3.discount,t3.time_period,t3.booking_window_hour,t3.start_time,t3.end_time,t3.day,t3.created_at,\n\
+    (SELECT COUNT(*) FROM tbl_booking t2 WHERE t1.type_id = t2.type_id AND t2.booking_status = 2 AND t2.booking_to = ?)as total_appoinment,\n\
+    IFNULL((SELECT SUM(t2.total_amount) FROM tbl_booking t2 WHERE t1.type_id = t2.type_id AND t2.booking_status = 2 AND t2.booking_to = ?),0)as total_profit,\n\
+    (\n\
+          SELECT \n\
+              CASE \n\
+                  WHEN EXISTS (\n\
+                      SELECT 1 \n\
+                      FROM tbl_promotion t4 \n\
+                      WHERE t4.type_id = t3.type_id AND DATE_FORMAT(t4.created_at,'%Y-%m-%d') BETWEEN CURRENT_DATE AND DATE_FORMAT(DATE_ADD(t4.created_at,INTERVAL t4.time_period DAY),'%Y-%m-%d') AND t4.time_period != 0 AND t4.discount != 0\n\
+                  ) THEN 1\n\
+                  WHEN EXISTS (\n\
+                      SELECT 1 \n\
+                      FROM tbl_promotion t4 \n\
+                      WHERE t4.type_id = t3.type_id AND DATE_FORMAT(t4.created_at,'%Y-%m-%d') = CURRENT_DATE AND t4.booking_window_hour != 0 AND t4.discount != 0\n\
+                  ) THEN 2\n\
+          WHEN EXISTS (\n\
+                      SELECT 1 \n\
+                      FROM tbl_promotion t4\n\
+                      WHERE t4.type_id = t3.type_id AND t3.day = DAYNAME(CURRENT_DATE) AND t4.discount != 0 AND t4.start_time != 'null' AND t4.end_time != 'null'\n\
+                  ) THEN 3\n\
+                  ELSE 0\n\
+              END\n\
+      ) as is_active\n\
+    FROM tbl_promotion_type t1\n\
+    LEFT JOIN tbl_promotion t3 ON t3.user_id = ? AND IF(t1.type_id = t3.type_id AND t3.type_id = 3,t3.day = DAYNAME('2023-11-22'),t1.type_id = t3.type_id) GROUP BY t1.type_id",
     [req.user.user_id, req.user.user_id, req.user.user_id],
     (err, res) => {
       if (err) {
@@ -2092,7 +2082,7 @@ exports.edit_last_minute_discount = (req, result) => {
   var serviceId = req.body.service_id;
   DeleteKeys(req.body, ["service_id"]);
   db.query(
-    "UPDATE tbl_promotion SET ? WHERE user_id = ?",
+    "UPDATE tbl_promotion SET ? WHERE user_id = ? AND type_id = 2",
     [req.body, req.body.user_id],
     (err, res) => {
       if (err) {
@@ -3161,21 +3151,127 @@ exports.list_social_post_subcategory = (req, result) => {
   );
 };
 
-exports.list_social_post_subcategory_template = (req, result) => {
+exports.list_social_post_subcategory_templatestring = (req, result) => {
   var body = {};
   db.query(
-    "SELECT * FROM tbl_social_post_subcategory_template WHERE subcategory_id = ?",
+    "SELECT * FROM tbl_social_post_subcategory_templatestring WHERE subcategory_id = ?",
     [req.body.subcategory_id],
     (err, res) => {
       if (err) {
         console.log("error", err);
       } else {
         body.Status = 1;
-        body.Message = "Social Post category get successful";
+        body.Message = "Templatestring get successful";
         body.info = res;
         result(null, body);
         return;
       }
     }
   );
+};
+
+exports.list_social_post_subcategory_template = (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT * FROM tbl_social_post_subcategory_template WHERE templatestring_id = ?",
+    [req.body.templatestring_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        body.Status = 1;
+        body.Message = "Template get successful";
+        body.info = res;
+        result(null, body);
+        return;
+      }
+    }
+  );
+};
+
+exports.create_socialpost = (req, result) => {
+  var body = {};
+  if (req.files != undefined && req.files.post) {
+    var ext = req.files.post[0].originalname.split(".").pop();
+    var ImageUrl_media = req.files.post[0].filename;
+    var ImageUrl_with__ext = req.files.post[0].filename + "." + ext;
+    fs.renameSync(
+      "uploads/images/" + ImageUrl_media,
+      "uploads/images/" + ImageUrl_with__ext
+    );
+    req.body.post = "uploads/images/" + ImageUrl_with__ext;
+  }
+  req.body.user_id = req.user.user_id;
+  db.query("INSERT INTO tbl_user_socialpost SET ?", [req.body], (err, res) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      body.Status = 1;
+      body.Message = "Social Post created successful";
+      result(null, body);
+      return;
+    }
+  });
+};
+
+exports.list_message_blast = (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT COUNT(*)as is_active_message_blast,\n\
+  (SELECT COUNT(*) FROM tbl_promote_saloon t2 WHERE t2.user_id = ? AND CURRENT_DATE >= t2.start_date AND CURRENT_DATE <= t2.end_date ORDER BY t2.promote_id DESC LIMIT 1)as is_active_promote_plan,\n\
+  (SELECT COUNT(*) FROM tbl_announcement t3 WHERE t3.user_id = ? AND CURRENT_DATE >= t3.start_date AND CURRENT_DATE <= t3.end_date ORDER BY t3.announcement_id DESC LIMIT 1)as is_active_announcement\n\
+   FROM tbl_message_blast t1 WHERE t1.user_id = ?",
+    [req.user.user_id, req.user.user_id, req.user.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        body.Status = 1;
+        body.Message = "Message blast get successful";
+        body.info = res;
+        result(null, body);
+        return;
+      }
+    }
+  );
+};
+
+exports.list_marketing = (req, result) => {
+var body = {};
+db.query(
+  `SELECT COUNT(*)as is_active_social_post,
+  (
+    SELECT 
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 FROM tbl_message_blast t2 WHERE t2.user_id = ?
+            ) THEN 1
+            WHEN EXISTS (
+                SELECT 1 
+                FROM tbl_promote_saloon t3 
+                WHERE t3.user_id = ? AND CURRENT_DATE >= t3.start_date AND CURRENT_DATE <= t3.end_date ORDER BY t3.promote_id DESC LIMIT 1
+            ) THEN 2
+    WHEN EXISTS (
+                SELECT 1 
+                FROM tbl_announcement t4
+                WHERE t4.user_id = ? AND CURRENT_DATE >= t4.start_date AND CURRENT_DATE <= t4.end_date ORDER BY t4.announcement_id DESC LIMIT 1
+            ) THEN 3
+            ELSE 0
+        END
+) as is_message_blast_active
+   FROM tbl_user_socialpost t1
+    WHERE t1.user_id = ?`,
+  [req.user.user_id],
+  (err, res) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      body.Status = 1;
+      body.Message = "Message blast get successful";
+      body.info = res;
+      result(null, body);
+      return;
+    }
+  }
+);
 };
