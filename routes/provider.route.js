@@ -222,7 +222,11 @@ router.post(
 
 router.post("/list_promote_plan", providerController.list_promote_plan);
 
-router.post("/list_promotion", providerController.list_promotion);
+router.post(
+  "/list_promotion",
+  [authenticate],
+  providerController.list_promotion
+);
 
 router.post(
   "/promote_saloon",
