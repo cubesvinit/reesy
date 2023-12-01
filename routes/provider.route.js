@@ -203,12 +203,6 @@ router.post(
 router.post(
   "/add_message_blast",
   upload.fields([{ name: "image", maxCount: 1 }]),
-  [
-    check("is_active").not().isEmpty().trim().escape(),
-    check("regular_message_text").not().isEmpty().trim().escape(),
-    check("push_message_text").not().isEmpty().trim().escape(),
-    check("message_title").not().isEmpty().trim().escape(),
-  ],
   [authenticate],
   providerController.add_message_blast
 );

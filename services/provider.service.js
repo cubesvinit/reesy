@@ -1476,10 +1476,14 @@ exports.add_message_blast = (req, result) => {
             req.body.image = "uploads/images/" + ImageUrl_with__ext;
           }
           req.body.user_id = req.user.user_id;
-          req.body.regular_message_text = hee.decode(
-            req.body.regular_message_text
-          );
-          req.body.push_message_text = hee.decode(req.body.push_message_text);
+          if (req.body.regular_message_text) {
+            req.body.regular_message_text = hee.decode(
+              req.body.regular_message_text
+            );
+          }
+          if (req.body.push_message_text) {
+            req.body.push_message_text = hee.decode(req.body.push_message_text);
+          }
           db.query(
             "INSERT INTO tbl_message_blast SET ?",
             [req.body],
@@ -1611,7 +1615,7 @@ exports.list_promotion = (req, result) => {
     [req.user.user_id, req.user.user_id, req.user.user_id],
     (err, res) => {
       if (err) {
-        console.log("error", err);  
+        console.log("error", err);
       } else {
         body.Status = 1;
         body.Message = "Promotions Listed successfully.";
@@ -3221,7 +3225,7 @@ exports.list_message_blast = (req, result) => {
     "SELECT COUNT(*)as is_active_message_blast,\n\
   (SELECT COUNT(*) FROM tbl_promote_saloon t2 WHERE t2.user_id = ? AND CURRENT_DATE >= t2.start_date AND CURRENT_DATE <= t2.end_date ORDER BY t2.promote_id DESC LIMIT 1)as is_active_promote_plan,\n\
   (SELECT COUNT(*) FROM tbl_announcement t3 WHERE t3.user_id = ? AND CURRENT_DATE >= t3.start_date AND CURRENT_DATE <= t3.end_date ORDER BY t3.announcement_id DESC LIMIT 1)as is_active_announcement\n\
-   FROM tbl_message_blast t1 WHERE t1.user_id = ?",
+   FROM tbl_message_blast t1 WHERE t1.user_id = ? AND is_active = 1",
     [req.user.user_id, req.user.user_id, req.user.user_id],
     (err, res) => {
       if (err) {
@@ -3246,7 +3250,7 @@ exports.list_marketing = (req, result) => {
     SELECT 
         CASE 
             WHEN EXISTS (
-                SELECT 1 FROM tbl_message_blast t2 WHERE t2.user_id = ?
+                SELECT 1 FROM tbl_message_blast t2 WHERE t2.user_id = ? AND t2.is_active = 1
             ) THEN 1
             WHEN EXISTS (
                 SELECT 1 
