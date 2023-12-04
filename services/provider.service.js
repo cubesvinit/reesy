@@ -2603,19 +2603,26 @@ exports.create_checkout = (req, result) => {
   var booking_data = {
     booking_by: req.body.client_id,
     booking_to: req.user.user_id,
-    booking_type: 1,
-    booking_date: moment().format("YYYY-MM-DD"),
-    total_amount: req.body.total_amount,
-    payment_method: req.body.payment_method,
-    discount: req.body.discount,
-    discount_amount: req.body.discount_amount,
-    total_custom_amount: req.body.total_custom_amount,
+    booking_type: req.body.booking_type,
+    booking_date: req.body.booking_date
+      ? req.body.booking_date
+      : moment().format("YYYY-MM-DD"),
+    total_amount: req.body.total_amount ? req.body.total_amount : 0,
+    payment_method: req.body.payment_method ? req.body.payment_method : 0,
+    discount: req.body.discount ? req.body.discount : 0,
+    discount_amount: req.body.discount_amount ? req.body.discount_amount : 0,
+    total_custom_amount: req.body.total_custom_amount
+      ? req.body.total_custom_amount
+      : 0,
+    time_slot: req.body.time_slot ? req.body.time_slot : null,
+    member_id: req.body.member_id ? req.body.member_id : 0,
   };
   db.query("INSERT INTO tbl_booking SET ?", [booking_data], (err, res) => {
     if (err) {
       console.log("error", err);
     } else {
       if (req.body.service_data) {
+        //create_checkout
         var obj = JSON.parse(req.body.service_data);
         console.log("obj", obj);
         obj.forEach((e, i) => {
@@ -2642,6 +2649,23 @@ exports.create_checkout = (req, result) => {
             }
           );
         });
+      } else if (req.body.service_id) {
+        //add appoinment
+        db.query(
+          "INSERT INTO tbl_service_booking(booking_id,user_id,service_id)VALUES(?,?,?)",
+          [res.insertId, booking_data.booking_by, req.body.service_id],
+          (err, res1) => {
+            if (err) {
+              console.log("error", err);
+            } else {
+              body.Status = 1;
+              body.Message = "Checkout created successfully";
+              body.booking_id = res.insertId;
+              result(null, body);
+              return;
+            }
+          }
+        );
       } else {
         body.Status = 1;
         body.Message = "Checkout created successfully";
@@ -3342,4 +3366,108 @@ exports.list_marketing = (req, result) => {
       }
     }
   );
+};
+
+exports.get_booking_details = (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT t1.*,CONCAT_WS(' ', t2.first_name, t2.last_name)as client_username,t2.profile_pic as client_pic,t2.country_code,t2.iso_code,t2.phone_number,\n\
+ CONCAT_WS(' ', t3.first_name, t3.last_name)as member_username,t3.profile_pic as member_pic\n\
+   FROM tbl_booking t1\n\
+   JOIN tbl_users t2 ON t1.booking_by = t2.user_id\n\
+   JOIN tbl_users t3 ON t1.member_id = t3.user_id\n\
+    WHERE t1.booking_id = ?",
+    [req.body.booking_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No Booking Found";
+          body.info = {};
+          result(null, body);
+          return;
+        } else {
+          db.query(
+            "SELECT t1.*,t2.service_name,t2.service_duration,t2.service_price,t3.color_code\n\
+             FROM tbl_service_booking t1\n\
+             JOIN tbl_provider_service t2 ON t1.service_id = t2.service_id\n\
+             JOIN tbl_service_color t3 ON t2.color_id = t3.color_id\n\
+             WHERE t1.booking_id = ?",
+            [req.body.booking_id],
+            (err, res1) => {
+              if (err) {
+                console.log("error", err);
+              } else {
+                res[0]["service"] = res1;
+                body.Status = 1;
+                body.Message = "Booking Details Get Successful";
+                body.info = res[0];
+                result(null, body);
+                return;
+              }
+            }
+          );
+        }
+      }
+    }
+  );
+};
+
+exports.get_upcoming_past_appoinment = (req, result) => {
+  var body = {};
+  var WHERE =
+    "  CONCAT_WS(' ',t1.booking_date,t1.time_slot) < CURRENT_TIMESTAMP"; //past appoinment
+  if (req.body.type == "upcoming") {
+    WHERE = " CONCAT_WS(' ',t1.booking_date,t1.time_slot) > CURRENT_TIMESTAMP";
+  }
+  db.query(
+    "SELECT t1.*,t2.service_name,t2.service_duration,t2.service_price,t3.color_code,t4.service_id,CONCAT_WS(' ',t5.first_name,t5.last_name)as member_name,\n\
+    t6.country_code,t6.iso_code,t6.phone_number,t6.email_id\n\
+    FROM tbl_booking t1 \n\
+  join tbl_service_booking t4 ON t1.booking_id = t4.booking_id\n\
+ JOIN tbl_provider_service t2 ON t2.service_id = t4.service_id\n\
+ JOIN tbl_service_color t3 ON t2.color_id = t3.color_id\n\
+ JOIN tbl_users t5 ON t1.member_id = t5.user_id\n\
+ JOIN tbl_users t6 ON t1.booking_by = t6.user_id\n\
+ WHERE t1.booking_by = ? AND " +
+      WHERE +
+      " ORDER BY CONCAT_WS(' ',t1.booking_date,t1.time_slot) DESC",
+    [req.body.client_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No appoinment Found";
+          body.info = res;
+          result(null, body);
+          return;
+        } else {
+          body.Status = 1;
+          body.Message = "Appoinment Get Successful";
+          body.info = res;
+          result(null, body);
+          return;
+        }
+      }
+    }
+  );
+};
+
+exports.add_report = (req, result) => {
+  var body = {};
+  req.body.report_by = req.user.user_id;
+  db.query("INSERT INTO tbl_report SET ?", [req.body], (err, res) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      body.Status = 1;
+      body.Message = "Report added successfully.";
+      result(null, body);
+      return;
+    }
+  });
 };

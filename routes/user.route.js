@@ -124,6 +124,8 @@ router.post(
     check("saloon_cleanliness_star").not().isEmpty().trim().escape(),
     check("overall_star").not().isEmpty().trim().escape(),
     check("review_text").not().isEmpty().trim().escape(),
+    check("is_reservation_when_you_arrived").not().isEmpty().trim().escape(),
+    check("is_you_saw_on_reesy").not().isEmpty().trim().escape(),
   ],
   [authenticate],
   usersController.add_review
@@ -250,6 +252,13 @@ router.post(
 );
 
 router.post(
+  "/get_reservation_details",
+  [ check("booking_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  usersController.get_reservation_details
+);
+
+router.post(
   "/cancle_reservation",
   [check("booking_id").not().isEmpty().trim().escape()],
   [authenticate],
@@ -258,8 +267,16 @@ router.post(
 
 router.post(
   "/get_reesy_point_history",
+  [check("page_no").not().isEmpty().trim().escape()],
   [authenticate],
   usersController.get_reesy_point_history
+);
+
+router.post(
+  "/list_my_review",
+  [check("booking_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  usersController.list_my_review
 );
 
 module.exports = router;

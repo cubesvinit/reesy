@@ -948,3 +948,45 @@ exports.list_marketing = (req, res) => {
     }
   });
 };
+
+exports.get_booking_details = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.get_booking_details(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.get_upcoming_past_appoinment = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.get_upcoming_past_appoinment(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.add_report = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.add_report(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};

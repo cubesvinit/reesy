@@ -910,8 +910,11 @@ exports.edit_profile = (req, result) => {
                 return;
               } else {
                 db.query(
-                  "SELECT t1.* FROM tbl_users t1 WHERE t1.user_id = ?",
-                  [update_data.user_id],
+                  "SELECT t1.*,\n\
+                  (SELECT COUNT(*) FROM tbl_booking t2 WHERE t2.booking_by = ?)as total_appoinment,\n\
+                  (SELECT SUM(total_amount) FROM tbl_booking t2 WHERE t2.booking_by = ?)as total_revenue\n\
+                   FROM tbl_users t1 WHERE t1.user_id = ?",
+                  [update_data.user_id,update_data.user_id,update_data.user_id],
                   (err, res1) => {
                     if (err) {
                       result(err, null);
@@ -1075,6 +1078,8 @@ exports.add_review = (req, result) => {
     saloon_cleanliness_star: req.body.saloon_cleanliness_star,
     overall_star: req.body.overall_star,
     review_text: hee.decode(req.body.review_text),
+    is_reservation_when_you_arrived: req.body.is_reservation_when_you_arrived,
+    is_you_saw_on_reesy: req.body.is_you_saw_on_reesy,
   };
 
   db.query(
@@ -2045,9 +2050,12 @@ exports.make_payment = (req, result) => {
             result(null, body);
             return;
           } else {
-            console.log("res[0].reesy_point",res[0].reesy_point);
-            console.log("res[0].redeem_amount",parseFloat(res[0].redeem_amount));
-            console.log("res[0].total_amount",parseFloat(res[0].total_amount));
+            console.log("res[0].reesy_point", res[0].reesy_point);
+            console.log(
+              "res[0].redeem_amount",
+              parseFloat(res[0].redeem_amount)
+            );
+            console.log("res[0].total_amount", parseFloat(res[0].total_amount));
             if (
               res[0].reesy_point == 0 &&
               parseFloat(res[0].redeem_amount) == 0 &&
@@ -2139,7 +2147,11 @@ exports.make_payment = (req, result) => {
                         } else {
                           db.query(
                             "UPDATE tbl_users SET reesy_point = reesy_point + 10,reesy_point = IF((reesy_point - ?) < 0,0,(reesy_point = reesy_point - ?)) WHERE user_id = ?",
-                            [res[0].reesy_point,res[0].reesy_point,req.user.user_id],
+                            [
+                              res[0].reesy_point,
+                              res[0].reesy_point,
+                              req.user.user_id,
+                            ],
                             (err, res3) => {
                               if (err) {
                                 console.log("error", err);
@@ -2326,6 +2338,41 @@ exports.get_reservation = (req, result) => {
   );
 };
 
+exports.get_reservation_details = (req, result) => {
+  var body = {};
+  db.query(
+    `SELECT t1.*,t2.bussiness_name,t2.bussiness_lat,t2.bussiness_long,t4.service_id,t5.service_name,t7.first_name,t7.last_name,t7.profile_pic,
+  (SELECT t3.image FROM tbl_workplace_image t3 WHERE t1.booking_to = t3.user_id ORDER BY t3.image_id ASC limit 1)as work_image,
+  (SELECT COUNT(*) FROM tbl_review t8 WHERE t1.booking_id = t8.booking_id AND t8.review_by = ?)as is_review_added
+  FROM tbl_booking t1
+  JOIN tbl_users t2 ON t1.booking_to = t2.user_id
+  JOIN tbl_service_booking t4 ON t1.booking_id = t4.booking_id
+  JOIN tbl_provider_service t5 ON t4.service_id = t5.service_id 
+  JOIN tbl_users t7 ON t1.member_id = t7.user_id
+  WHERE t1.booking_id = ?`,
+    [req.user.user_id,req.body.booking_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No data found";
+          body.info = {};
+          result(null, body);
+          return;
+        } else {
+          body.Status = 1;
+          body.Message = "Reservation details get successful";
+          body.info = res[0];
+          result(null, body);
+          return;
+        }
+      }
+    }
+  );
+};
+
 exports.cancle_reservation = (req, result) => {
   var body = {};
   db.query(
@@ -2374,6 +2421,33 @@ exports.get_reesy_point_history = (req, result) => {
           body.Message = "History get successful";
           body.total_page = Math.ceil(res[0].total_data / limit);
           body.info = res;
+          result(null, body);
+          return;
+        }
+      }
+    }
+  );
+};
+
+exports.list_my_review = (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT * FROM tbl_review WHERE review_by = ? AND booking_id = ?",
+    [req.user.user_id, req.body.booking_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res.length <= 0) {
+          body.Status = 1;
+          body.Message = "No Review found";
+          body.info = {};
+          result(null, body);
+          return;
+        } else {
+          body.Status = 1;
+          body.Message = " My Review get successful";
+          body.info = res[0];
           result(null, body);
           return;
         }

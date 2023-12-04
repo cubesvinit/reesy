@@ -366,6 +366,7 @@ router.post(
     check("discount_amount").not().isEmpty().trim().escape(),
     check("total_amount").not().isEmpty().trim().escape(),
     check("total_custom_amount").not().isEmpty().trim().escape(),
+    check("booking_type").not().isEmpty().trim().escape(),
   ],
   [authenticate],
   providerController.create_checkout
@@ -480,6 +481,34 @@ router.post(
   "/list_marketing",
   [authenticate],
   providerController.list_marketing
+);
+
+router.post(
+  "/get_booking_details",
+  [check("booking_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.get_booking_details
+);
+
+router.post(
+  "/get_upcoming_past_appoinment",
+  [
+    check("client_id").not().isEmpty().trim().escape(),
+    check("type").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.get_upcoming_past_appoinment
+);
+
+router.post(
+  "/add_report",
+  [
+    check("from_date").not().isEmpty().trim().escape(),
+    check("to_date").not().isEmpty().trim().escape(),
+    check("email_id").not().isEmpty().trim().escape(),
+  ],
+  [authenticate],
+  providerController.add_report
 );
 
 module.exports = router;
