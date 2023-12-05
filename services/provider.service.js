@@ -2861,6 +2861,7 @@ exports.edit_workshift = (req, result) => {
   }
   if (req.body.workshift_data) {
     var obj = JSON.parse(req.body.workshift_data);
+    console.log('obj',obj);
     var workshift = {
       workshift_id: obj.workshift_id,
       user_id: req.user.user_id,
@@ -2870,7 +2871,7 @@ exports.edit_workshift = (req, result) => {
       is_closed: obj.is_closed,
     };
     db.query(
-      "UPDATE tbl_workshifts SET ? WHERE workshift_id = ?",
+      "UPDATE tbl_member_workshift SET ? WHERE workshift_id = ?",
       [workshift, workshift.workshift_id],
       (err, res) => {
         if (err) {
