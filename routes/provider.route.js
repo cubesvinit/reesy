@@ -511,4 +511,11 @@ router.post(
   providerController.add_report
 );
 
+router.post(
+  "/delete_timeoff",
+  [check("timeoff_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.delete_timeoff
+);
+
 module.exports = router;

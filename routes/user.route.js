@@ -89,7 +89,10 @@ router.post(
 
 router.post(
   "/edit_profile",
-  upload.fields([{ name: "profile_pic", maxCount: 1 }]),
+  upload.fields([
+    { name: "profile_pic", maxCount: 1 },
+    { name: "cover_pic", maxCount: 1 },
+  ]),
   [authenticate],
   usersController.edit_profile
 );
@@ -253,7 +256,7 @@ router.post(
 
 router.post(
   "/get_reservation_details",
-  [ check("booking_id").not().isEmpty().trim().escape()],
+  [check("booking_id").not().isEmpty().trim().escape()],
   [authenticate],
   usersController.get_reservation_details
 );

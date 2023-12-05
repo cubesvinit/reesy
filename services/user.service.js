@@ -884,22 +884,42 @@ exports.edit_profile = (req, result) => {
             }
             update_data.profile_pic = req.body.avtar;
           }
-          if (req.files != undefined && req.files.profile_pic) {
-            try {
-              fs.unlinkSync(req.user.profile_pic);
-            } catch (e) {
-              console.log("Profile pic not found");
-            }
-            var ext = req.files.profile_pic[0].originalname.split(".").pop();
-            ImageUrl_media = req.files.profile_pic[0].filename;
-            ImageUrl_with__ext = req.files.profile_pic[0].filename + "." + ext;
+          if (req.files != undefined) {
+            if (req.files.profile_pic) {
+              try {
+                fs.unlinkSync(req.user.profile_pic);
+              } catch (e) {
+                console.log("Profile pic not found");
+              }
+              var ext = req.files.profile_pic[0].originalname.split(".").pop();
+              ImageUrl_media = req.files.profile_pic[0].filename;
+              ImageUrl_with__ext =
+                req.files.profile_pic[0].filename + "." + ext;
 
-            fs.renameSync(
-              "uploads/images/" + ImageUrl_media,
-              "uploads/images/" + ImageUrl_with__ext
-            );
-            var new_path = "uploads/images/" + ImageUrl_with__ext;
-            update_data.profile_pic = new_path;
+              fs.renameSync(
+                "uploads/images/" + ImageUrl_media,
+                "uploads/images/" + ImageUrl_with__ext
+              );
+              var new_path = "uploads/images/" + ImageUrl_with__ext;
+              update_data.profile_pic = new_path;
+            }
+            if (req.files.cover_pic) {
+              try {
+                fs.unlinkSync(req.user.cover_pic);
+              } catch (e) {
+                console.log("cover_pic not found");
+              }
+              var ext = req.files.cover_pic[0].originalname.split(".").pop();
+              ImageUrl_media = req.files.cover_pic[0].filename;
+              ImageUrl_with__ext = req.files.cover_pic[0].filename + "." + ext;
+
+              fs.renameSync(
+                "uploads/images/" + ImageUrl_media,
+                "uploads/images/" + ImageUrl_with__ext
+              );
+              var new_path = "uploads/images/" + ImageUrl_with__ext;
+              update_data.cover_pic = new_path;
+            }
           }
           db.query(
             "UPDATE tbl_users SET ? WHERE user_id = ?",
@@ -914,7 +934,11 @@ exports.edit_profile = (req, result) => {
                   (SELECT COUNT(*) FROM tbl_booking t2 WHERE t2.booking_by = ?)as total_appoinment,\n\
                   (SELECT SUM(total_amount) FROM tbl_booking t2 WHERE t2.booking_by = ?)as total_revenue\n\
                    FROM tbl_users t1 WHERE t1.user_id = ?",
-                  [update_data.user_id,update_data.user_id,update_data.user_id],
+                  [
+                    update_data.user_id,
+                    update_data.user_id,
+                    update_data.user_id,
+                  ],
                   (err, res1) => {
                     if (err) {
                       result(err, null);
@@ -2350,7 +2374,7 @@ exports.get_reservation_details = (req, result) => {
   JOIN tbl_provider_service t5 ON t4.service_id = t5.service_id 
   JOIN tbl_users t7 ON t1.member_id = t7.user_id
   WHERE t1.booking_id = ?`,
-    [req.user.user_id,req.body.booking_id],
+    [req.user.user_id, req.body.booking_id],
     (err, res) => {
       if (err) {
         console.log("error", err);

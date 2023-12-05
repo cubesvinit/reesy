@@ -2985,14 +2985,28 @@ exports.list_all_member_workshift = (req, result) => {
               if (err) {
                 console.log("error", err);
               } else {
-                res[i]["break"] = res1;
-                if (res.length - 1 == i) {
-                  body.Status = 1;
-                  body.Message = "Workshift listed successfully";
-                  body.info = res;
-                  result(null, body);
-                  return;
-                }
+                db.query(
+                  "SELECT t1.*,t2.reason\n\
+                   FROM tbl_workshift_timeoff t1\n\
+                   JOIN tbl_timeoff_reason t2 ON t1.reason_id = t2.reason_id\n\
+                    WHERE t1.member_id = ? AND t1.user_id = ?",
+                  [e.member_id, req.user.user_id],
+                  (err, res2) => {
+                    if (err) {
+                      console.log("error", err);
+                    } else {
+                      res[i]["break"] = res1;
+                      res[i]["timeoff"] = res2;
+                      if (res.length - 1 == i) {
+                        body.Status = 1;
+                        body.Message = "Workshift listed successfully";
+                        body.info = res;
+                        result(null, body);
+                        return;
+                      }
+                    }
+                  }
+                );
               }
             }
           );
@@ -3470,4 +3484,22 @@ exports.add_report = (req, result) => {
       return;
     }
   });
+};
+
+exports.delete_timeoff = (req, result) => {
+  var body = {};
+  db.query(
+    "DELETE FROM tbl_workshift_timeoff WHERE timeoff_id = ?",
+    [req.body.timeoff_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        body.Status = 1;
+        body.Message = "Timeoff deleted successfully";
+        result(null, body);
+        return;
+      }
+    }
+  );
 };
