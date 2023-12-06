@@ -2917,8 +2917,8 @@ exports.edit_workshift = (req, result) => {
                   var timeoff_data = {
                     user_id: req.user.user_id,
                     member_id: req.body.member_id,
-                    timeoff_date: e2.timeoff_date,
-                    reason_id: e2.reason.reason_id,
+                    timeoff_date: req.body.calender_date,
+                    reason_id: e2.reason_id,
                     type: e2.type,
                     start_date: e2.start_date,
                     end_date: e2.end_date,

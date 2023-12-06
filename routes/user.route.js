@@ -282,4 +282,9 @@ router.post(
   usersController.list_my_review
 );
 
+router.post(
+  "/get_testing_timeslot",
+  usersController.get_testing_timeslot
+);
+
 module.exports = router;

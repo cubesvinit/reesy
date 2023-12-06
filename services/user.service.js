@@ -1949,35 +1949,6 @@ exports.get_booking_available_timeslot = (req, result) => {
       }
     }
   );
-
-  // db.query(
-  //   `SELECT
-  //   t1.*,
-  //   t2.start_time AS member_start_time,
-  //   t2.end_time AS member_end_time,
-  //   t3.service_duration,
-  //   t4.break_start,
-  //   t4.break_end,
-  //   t5.break_start AS member_break_start,
-  //   t5.break_end AS member_break_end,
-  //   t6.start_time as member_off_start_time,t6.end_time as member_off_end_time
-  // FROM
-  //   tbl_bussiness_hour t1
-  // LEFT JOIN
-  //   tbl_member_workshift t2 ON t1.user_id = t2.user_id AND t1.day = t2.day AND t2.member_id = ${member_id}
-  // LEFT JOIN
-  //   tbl_provider_service t3 ON t1.user_id = t3.user_id AND t3.service_id = ${service_id}
-  // LEFT JOIN
-  //   tbl_bussiness_hour_break t4 ON t1.user_id = t4.user_id AND t1.hour_id = t4.hour_id
-  // LEFT JOIN
-  //   tbl_member_workshift_break t5 ON t2.user_id = t5.user_id AND t2.workshift_id = t5.workshift_id
-  //   LEFT JOIN
-  //   tbl_workshift_timeoff t6 ON t1.user_id = t6.user_id AND t6.start_date = ${booking_date}
-  // WHERE
-  //   t1.user_id = ${saloon_id} AND t1.day = DAYNAME(${booking_date}) AND t1.is_closed = 0
-  // GROUP BY
-  //   t1.user_id, t1.hour_id LIMIT 1`
-  // );
 };
 
 exports.add_booking = (req, result) => {
@@ -2456,7 +2427,10 @@ exports.get_reesy_point_history = (req, result) => {
 exports.list_my_review = (req, result) => {
   var body = {};
   db.query(
-    "SELECT * FROM tbl_review WHERE review_by = ? AND booking_id = ?",
+    `SELECT t1.*,t2.first_name,t2.last_name,t2.profile_pic
+     FROM tbl_review t1
+     JOIN tbl_users t2 ON t1.review_by = t2.user_id
+     WHERE t1.review_by = ? AND t1.booking_id = ?`,
     [req.user.user_id, req.body.booking_id],
     (err, res) => {
       if (err) {
@@ -2472,6 +2446,97 @@ exports.list_my_review = (req, result) => {
           body.Status = 1;
           body.Message = " My Review get successful";
           body.info = res[0];
+          result(null, body);
+          return;
+        }
+      }
+    }
+  );
+};
+
+exports.get_testing_timeslot = (req, result) => {
+  var body = {};
+  var saloon_id = req.body.saloon_id;
+  var member_id = req.body.member_id;
+  var service_id = req.body.service_id;
+  var booking_date = req.body.booking_date;
+  db.query(
+    "SELECT is_closed FROM tbl_bussiness_hour WHERE day = DAYNAME('" +
+      booking_date +
+      "') AND user_id = " +
+      saloon_id +
+      "",
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        if (res[0].is_closed == 0) {
+     db.query(
+      `SELECT
+      t1.*,
+      t2.start_time AS member_start_time,
+      t2.close_time AS member_end_time,
+      t3.service_duration
+    FROM
+      tbl_bussiness_hour t1
+    LEFT JOIN
+      tbl_member_workshift t2 ON t1.user_id = t2.user_id AND t1.day = t2.day AND t2.member_id = 113
+    LEFT JOIN
+      tbl_provider_service t3 ON t1.user_id = t3.user_id AND t3.service_id = 33
+    WHERE
+      t1.user_id = 112 AND t1.day = DAYNAME('2023-12-06') AND t1.is_closed = 0
+    GROUP BY
+      t1.user_id, t1.hour_id LIMIT 1`,
+    (err, res1) => {
+      if (err) {
+        console.log("error", err);
+      }else{
+        db.query(
+          "SELECT t1.*,t2.day FROM tbl_bussiness_hour_break t1\n\
+          LEFT JOIN tbl_bussiness_hour t2 ON t1.hour_id = t2.hour_id\n\
+           WHERE t1.user_id = 112 AND t2.day = DAYNAME('2023-12-06')",
+           (err, res2) => {
+            if (err) {
+              console.log("error", err);
+            }else{
+              db.query(
+                "SELECT t1.*,t2.day FROM tbl_member_workshift_break t1\n\
+                LEFT JOIN tbl_member_workshift t2 ON t1.workshift_id = t2.workshift_id\n\
+                 WHERE t1.user_id = 112 AND t2.day = DAYNAME('2023-12-06') AND t2.member_id = 113",
+                 (err, res3) => {
+                  if (err) {
+                    console.log("error", err);
+                  }else{
+                    db.query(
+                      "SELECT * FROM tbl_workshift_timeoff WHERE type = 2 AND start_date = '2023-12-06' AND member_id = 113 AND user_id = 112",
+                      (err, res4) => {
+                        if (err) {
+                          console.log("error", err);
+                        }else{
+                          res1[0].saloon_break = res2;
+                          res1[0].member_break = res3;
+                          res1[0].member_timeoff = res4;
+                          body.Status = 1;
+                          body.Message = "Timeslot get successful";
+                          body.info = res1[0];
+                          result(null, body);
+                          return;
+                        }
+                      }
+                    );
+                  }
+                 }
+              );
+            }
+           }
+        );
+      }
+    }
+  );
+        } else {
+          body.Status = 0;
+          body.Message =
+            "We regret to inform you that the salon is closed on the date you selected for booking. Kindly choose another date for your appointment";
           result(null, body);
           return;
         }

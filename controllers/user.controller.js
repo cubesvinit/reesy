@@ -383,3 +383,17 @@ exports.list_my_review = (req, res) => {
     }
   });
 };
+
+exports.get_testing_timeslot = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  usersService.get_testing_timeslot(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
