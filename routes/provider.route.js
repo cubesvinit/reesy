@@ -518,4 +518,17 @@ router.post(
   providerController.delete_timeoff
 );
 
+router.post(
+  "/get_all_timeoff",
+  [authenticate],
+  providerController.get_all_timeoff
+);
+
+router.post(
+  "/get_member_timeoff",
+  [check("member_id").not().isEmpty().trim().escape()],
+  [authenticate],
+  providerController.get_member_timeoff
+);
+
 module.exports = router;

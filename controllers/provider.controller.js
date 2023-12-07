@@ -175,22 +175,9 @@ exports.delete_service = (req, res) => {
 };
 
 exports.add_workplace_image = (req, res) => {
-  const errors = validationResult(req);
-  var err = errors.array();
-  var validateobj = {
-    msg: "Invalid value",
-    param: "image",
-    location: "body",
-  };
-  if (req.files == undefined || isEmpty(req.files)) {
-    if (req.files == undefined) {
-      err.push(validateobj);
-    } else if (req.files.image == undefined) {
-      err.push(validateobj);
-    } else if (req.files.image != undefined) {
-      fs.unlinkSync(req.files.image);
-    }
-    return res.status(422).json({ errors: err });
+ const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
   }
   providerService.add_workplace_image(req, (err, data) => {
     if (err) {
@@ -997,6 +984,34 @@ exports.delete_timeoff = (req, res) => {
     return res.status(422).json({ errors: errors.array() });
   }
   providerService.delete_timeoff(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.get_all_timeoff = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.get_all_timeoff(req, (err, data) => {
+    if (err) {
+      return res.status(400).json(err);
+    } else {
+      return res.status(200).json(data);
+    }
+  });
+};
+
+exports.get_member_timeoff = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+  providerService.get_member_timeoff(req, (err, data) => {
     if (err) {
       return res.status(400).json(err);
     } else {

@@ -726,33 +726,40 @@ exports.delete_service = (req, result) => {
 };
 
 exports.add_workplace_image = (req, result) => {
+  console.log('add_workplace_image',req.files);
   var body = {};
-  req.files["image"].forEach((image, index) => {
-    var ext = image.originalname.split(".").pop();
-    var ImageUrl_media = image.filename;
-    var ImageUrl_with__ext = image.filename + "." + ext;
-    fs.renameSync(
-      "uploads/images/" + ImageUrl_media,
-      "uploads/images/" + ImageUrl_with__ext
-    );
-    var Image = "uploads/images/" + ImageUrl_with__ext;
-    db.query(
-      "INSERT INTO tbl_workplace_image(user_id,image) VALUES(?,?)",
-      [req.user.user_id, Image],
-      (err, res2) => {
-        if (err) {
-          console.log("error", err);
-        } else {
-          if (req.files["image"].length - 1 == index) {
-            body.Status = 1;
-            body.Message = "Image uploaded successfully";
-            result(null, body);
-            return;
+  if(req.files != undefined && isEmpty(req.files) != true){
+    req.files["image"].forEach((image, index) => {
+      var ext = image.originalname.split(".").pop();
+      var ImageUrl_media = image.filename;
+      var ImageUrl_with__ext = image.filename + "." + ext;
+      fs.renameSync(
+        "uploads/images/" + ImageUrl_media,
+        "uploads/images/" + ImageUrl_with__ext
+      );
+      var Image = "uploads/images/" + ImageUrl_with__ext;
+      db.query(
+        "INSERT INTO tbl_workplace_image(user_id,image) VALUES(?,?)",
+        [req.user.user_id, Image],
+        (err, res2) => {
+          if (err) {
+            console.log("error", err);
+          } else {
+            if (req.files["image"].length - 1 == index) {
+              body.Status = 1;
+              body.Message = "Image uploaded successfully";
+              result(null, body);
+              return;
+            }
           }
         }
-      }
-    );
-  });
+      );
+    });
+  }else{
+    body.Status = 0;
+    result(null, body);
+    return;
+  }
 };
 
 exports.list_workplace_image = (req, result) => {
@@ -2452,9 +2459,12 @@ exports.list_upcoming_birthday_client = (req, result) => {
       "%')";
   }
   db.query(
-    "SELECT * FROM tbl_client WHERE DATE_FORMAT(date_of_birth,'%m-%d') BETWEEN ? AND '12-31' " +
+    "SELECT t1.*,t2.profile_pic\n\
+     FROM tbl_client t1\n\
+     LEFT JOIN tbl_users t2 ON t1.client_user_id = t2.user_id\n\
+      WHERE DATE_FORMAT(t1.date_of_birth,'%m-%d') BETWEEN ? AND '12-31' " +
       WHERE +
-      " ORDER BY date_of_birth ASC LIMIT " +
+      " ORDER BY t1.date_of_birth ASC LIMIT " +
       limit +
       " OFFSET " +
       offset,
@@ -2472,9 +2482,12 @@ exports.list_upcoming_birthday_client = (req, result) => {
           return;
         } else {
           db.query(
-            "SELECT * FROM tbl_client WHERE DATE_FORMAT(date_of_birth,'%m-%d') BETWEEN ? AND '12-31' " +
-              WHERE +
-              " ORDER BY date_of_birth ASC",
+            "SELECT t1.*,t2.profile_pic\n\
+            FROM tbl_client t1\n\
+            LEFT JOIN tbl_users t2 ON t1.client_user_id = t2.user_id\n\
+             WHERE DATE_FORMAT(t1.date_of_birth,'%m-%d') BETWEEN ? AND '12-31' " +
+             WHERE +
+             " ORDER BY t1.date_of_birth ASC",
             [moment().format("MM-DD")],
             (err, res1) => {
               if (err) {
@@ -3498,6 +3511,50 @@ exports.delete_timeoff = (req, result) => {
       } else {
         body.Status = 1;
         body.Message = "Timeoff deleted successfully";
+        result(null, body);
+        return;
+      }
+    }
+  );
+};
+
+exports.get_all_timeoff = (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT t1.*,t2.reason\n\
+     FROM tbl_workshift_timeoff t1\n\
+     JOIN tbl_timeoff_reason t2 ON t1.reason_id = t2.reason_id\n\
+      WHERE (t1.start_date >= CURRENT_DATE) OR (t1.end_date >= CURRENT_DATE) AND t1.user_id = ?",
+    [req.user.user_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        body.Status = 1;
+        body.Message = "Timeoff get successfully";
+        body.info = res;
+        result(null, body);
+        return;
+      }
+    }
+  );
+};
+
+exports.get_member_timeoff = (req, result) => {
+  var body = {};
+  db.query(
+    "SELECT t1.*,t2.reason\n\
+     FROM tbl_workshift_timeoff t1 \n\
+     JOIN tbl_timeoff_reason t2 ON t1.reason_id = t2.reason_id\n\
+     WHERE  (t1.start_date >= CURRENT_DATE) OR (t1.end_date >= CURRENT_DATE) AND t1.user_id = ? AND t1.member_id = ?",
+    [req.user.user_id, req.body.member_id],
+    (err, res) => {
+      if (err) {
+        console.log("error", err);
+      } else {
+        body.Status = 1;
+        body.Message = "Timeoff get successfully";
+        body.info = res;
         result(null, body);
         return;
       }
